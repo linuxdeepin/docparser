@@ -142,776 +142,780 @@ Sheet::Sheet(Book* book, int position, const std::string& name, size_t number, s
   m_maxRowCount((m_book->m_biffVersion >= 80) ? 65536 : 16384), m_position(position) {}
 
 void Sheet::read() {
-	bool isSstRichtext = m_book->m_addStyle && !m_book->m_richtextRunlistMap.empty();
-	std::map<std::pair<unsigned short, int>, Rowinfo> rowinfoSharingDict;
-	std::unordered_map<unsigned short, MSTxo> msTxos;
-	bool eofFound = false;
-	int savedObjectId;
-	int oldPosition = m_book->m_position;
-	m_book->m_position = m_position;
-	while (true) {
-		unsigned short code;
-		unsigned short size;
-		std::string    data;
-		m_book->getRecordParts(code, size, data);
-		if (code == XL_NUMBER) {
-			// [:14] in following stmt ignores extraneous rubbish at end of record
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-			double d = m_book->readByte<double>(data, 6, 8);
-
-            append(std::to_string(d));
-//			putCell(rowIndex, colIndex, std::to_string(d), xfIndex);
-        } else if (code == XL_LABELSST) {
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-			int sstIndex = m_book->readByte<int>(data, 6, 4);
-
-            append(m_book->m_sharedStrings[sstIndex]);
-//			putCell(rowIndex, colIndex, m_book->m_sharedStrings[sstIndex], xfIndex);
-			if (isSstRichtext) {
-				auto& runlist = m_book->m_richtextRunlistMap[sstIndex];
-				if (!runlist.empty())
-					m_richtextRunlistMap[{rowIndex, colIndex}] = runlist;
-			}
-        } else if (code == XL_LABEL) {
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-			std::string str;
-
-			if (m_book->m_biffVersion < 80)
-				str = m_book->unpackString(data, 6, 2);
-			else
-				str = m_book->unpackUnicode(data, 6, 2);
-            append(str);
-//			putCell(rowIndex, colIndex, str, xfIndex);
-        } else if (code == XL_RSTRING) {
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-			int pos = 6;
-			std::string str;
-			std::vector<std::pair<unsigned short, unsigned short>> runlist;
-
-			if (m_book->m_biffVersion < 80) {
-				str = m_book->unpackStringUpdatePos(data, pos, 2);
-				char nrt = data[pos];
-				pos += 1;
-				for (int i = 0; i < nrt; ++i) {
-					runlist.emplace_back(
-						m_book->readByte<unsigned char>(data, pos,   1),
-						m_book->readByte<unsigned char>(data, pos+1, 1)
-					);
-					pos += 2;
-				}
-            } else {
-				str = m_book->unpackUnicodeUpdatePos(data, pos, 2);
-				unsigned short nrt = m_book->readByte<unsigned short>(data, pos, 2);
-				pos += 2;
-				for (int i = 0; i < nrt; ++i) {
-					runlist.emplace_back(
-						m_book->readByte<unsigned short>(data, pos,   2),
-						m_book->readByte<unsigned short>(data, pos+2, 2)
-					);
-					pos += 4;
-				}
-			}
-            append(str);
-//			putCell(rowIndex, colIndex, str, xfIndex);
-			m_richtextRunlistMap[{rowIndex, colIndex}] = runlist;
-        } else if (code == XL_RK) {
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-			double d = unpackRK(data.substr(6, 4));
-
-            append(std::to_string(d));
-//			putCell(rowIndex, colIndex, std::to_string(d), xfIndex);
-        } else if (code == XL_MULRK) {
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short firstCol = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short lastCol  = m_book->readByte<unsigned short>(data, (int)data.size()-2, 2);
-			int pos = 4;
-
-			for (int i = firstCol; i <= lastCol; ++i) {
-				unsigned short xfIndex = m_book->readByte<unsigned short>(data, pos, 2);
-				double d = unpackRK(data.substr(pos+2, 4));
-				pos += 6;
+    try {
+        bool isSstRichtext = m_book->m_addStyle && !m_book->m_richtextRunlistMap.empty();
+        std::map<std::pair<unsigned short, int>, Rowinfo> rowinfoSharingDict;
+        std::unordered_map<unsigned short, MSTxo> msTxos;
+        bool eofFound = false;
+        int savedObjectId;
+        int oldPosition = m_book->m_position;
+        m_book->m_position = m_position;
+        while (true) {
+            unsigned short code;
+            unsigned short size;
+            std::string    data;
+            m_book->getRecordParts(code, size, data);
+            if (code == XL_NUMBER) {
+                // [:14] in following stmt ignores extraneous rubbish at end of record
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                double d = m_book->readByte<double>(data, 6, 8);
 
                 append(std::to_string(d));
-//				putCell(rowIndex, i, std::to_string(d), xfIndex);
-			}
-        } else if (code == XL_ROW) {
-			if (!m_book->m_addStyle)
-				continue;
+                //			putCell(rowIndex, colIndex, std::to_string(d), xfIndex);
+            } else if (code == XL_LABELSST) {
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                int sstIndex = m_book->readByte<int>(data, 6, 4);
 
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short flag1    = m_book->readByte<unsigned short>(data, 6, 2);
-			int flag2 = m_book->readByte<int>(data, 12, 4);
-			if (!(0 <= rowIndex && rowIndex < m_maxRowCount))
-				continue;
+                append(m_book->m_sharedStrings[sstIndex]);
+                //			putCell(rowIndex, colIndex, m_book->m_sharedStrings[sstIndex], xfIndex);
+                if (isSstRichtext) {
+                    auto& runlist = m_book->m_richtextRunlistMap[sstIndex];
+                    if (!runlist.empty())
+                        m_richtextRunlistMap[{rowIndex, colIndex}] = runlist;
+                }
+            } else if (code == XL_LABEL) {
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                std::string str;
 
-			auto key = std::make_pair(flag1, flag2);
-			Rowinfo rowinfo;
-			if (rowinfoSharingDict.find(key) == rowinfoSharingDict.end()) {
-				// Using upkbits() is far too slow on a file with 30 sheets each with 10K rows. So:
-				rowinfo.m_height                   = flag1 & 0x7fff;
-				rowinfo.m_hasDefaultHeight         = (flag1 >> 15) & 1;
-				rowinfo.m_outlineLevel             = flag2 & 7;
-				rowinfo.m_isOutlineGroupStartsEnds = (flag2 >> 4)  & 1;
-				rowinfo.m_isHidden                 = (flag2 >> 5)  & 1;
-				rowinfo.m_isHeightMismatch         = (flag2 >> 6)  & 1;
-				rowinfo.m_hasDefaultXfIndex        = (flag2 >> 7)  & 1;
-				rowinfo.m_xfIndex                  = (flag2 >> 16) & 0xfff;
-				rowinfo.m_hasAdditionalSpaceAbove  = (flag2 >> 28) & 1;
-				rowinfo.m_hasAdditionalSpaceBelow  = (flag2 >> 29) & 1;
-				if (!rowinfo.m_hasDefaultXfIndex)
-					rowinfo.m_xfIndex = -1;
-				rowinfoSharingDict[key] = rowinfo;
-            } else
-				rowinfo = rowinfoSharingDict[key];
-			m_rowinfoMap[rowIndex] = rowinfo;
-        } else if (code == 0x0006 || code == 0x0406 || code == 0x0206) {
-			unsigned short rowIndex;
-			unsigned short colIndex;
-			unsigned short xfIndex;
-			unsigned short flags;
-			std::string result;
-			if (m_book->m_biffVersion >= 50) {
-				rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-				colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-				xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-				result   = m_book->readByte<std::string>(data, 6, 8);
-				flags    = m_book->readByte<unsigned short>(data, 14, 2);
-            } else if (m_book->m_biffVersion >= 30) {
-				rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-				colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-				xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-				result   = m_book->readByte<std::string>(data, 6, 8);
-				flags    = m_book->readByte<unsigned short>(data, 14, 2);
-			}
-			// BIFF2
-			else {
-				rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-				colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-				std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
-				result   = m_book->readByte<std::string>(data, 7, 8);
-				flags   = m_book->readByte<unsigned char>(data, 15, 1);
-
-				xfIndex = fixedXfIndexB2(cellAttributes);
-			}
-
-			if (result.substr(6, 2) == "\xFF\xFF") {
-				char firstByte = result[0];
-				if (firstByte == 0) {
-					// Need to read next record (STRING)
-					bool gotString = false;
-					// "if flags & 8" applies only to SHRFMLA
-					// Actually there's an optional SHRFMLA or ARRAY etc record to skip over
-					unsigned short code2;
-					unsigned short size2;
-					std::string    data2;
-
-					m_book->getRecordParts(code2, size2, data2);
-					if (code2 == XL_STRING || code2 == XL_STRING_B2)
-						gotString = true;
-					else if (find(XL_SHRFMLA_ETC.begin(), XL_SHRFMLA_ETC.end(), code2) == XL_SHRFMLA_ETC.end())
-						throw std::logic_error(
-							"Expected SHRFMLA, ARRAY, TABLEOP* or STRING record; found " +
-							std::to_string(code2)
-						);
-
-					// Now for the STRING record
-					if (!gotString) {
-						m_book->getRecordParts(code2, size2, data2);
-						if (code2 != XL_STRING && code2 != XL_STRING_B2)
-							throw std::logic_error(
-								"Expected STRING record; found " +
-								std::to_string(code2)
-							);
-					}
-					std::string str = stringRecordContent(data2);
-                    append(str);
-//					putCell(rowIndex, colIndex, str, xfIndex);
-				}
-				// Boolean formula result
-				else if (firstByte == 1) {
-                    append(std::string(1, result[2]));
-//					putCell(rowIndex, colIndex, std::string(1, result[2]), xfIndex);
-				}
-				// Error in cell
-				else if (firstByte == 2) {
-                    append(std::string(1, result[2]));
-//					putCell(rowIndex, colIndex, std::string(1, result[2]), xfIndex);
-				}
-				// Empty ... i.e. empty (zero-length) string, NOT an empty cell
-				else if (firstByte == 3) {
-//					putCell(rowIndex, colIndex, "", xfIndex);
-				}
-				else {
-					throw std::logic_error(
-						"Unexpected special case (" + std::to_string(firstByte) +
-						") in FORMULA"
-					);
-				}
-			}
-			// It is a number
-			else {
-				double d = m_book->readByte<double>(result, 0, 8);
-                append(std::to_string(d));
-//				putCell(rowIndex, colIndex, std::to_string(d), xfIndex);
-			}
-        } else if (code == XL_BOOLERR) {
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-			unsigned char value     = m_book->readByte<unsigned char>(data, 6, 1);
-			//unsigned char hasError  = m_book->readByte<unsigned char>(data, 7, 1);
-			// Note: OOo Calc 2.0 writes 9-byte BOOLERR records. OOo docs say 8. Excel writes 8
-			//int cellType = hasError ? XL_CELL_ERROR : XL_CELL_BOOLEAN;
-            append(std::string(1, value));
-//			putCell(rowIndex, colIndex, std::string(1, value), xfIndex);
-        } else if (code == XL_COLINFO) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			Colinfo colinfo;
-			unsigned short firstColIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short lastColIndex  = m_book->readByte<unsigned short>(data, 2, 2);
-			colinfo.m_width              = m_book->readByte<unsigned short>(data, 4, 2);
-			colinfo.m_xfIndex            = m_book->readByte<unsigned char>(data, 6, 1);
-			unsigned short flags         = m_book->readByte<unsigned short>(data, 8, 2);
-			// #Colinfo.m_width is denominated in 256ths of a character, not in characters
-			// Note: 256 instead of 255 is a common mistake. Silently ignore non-existing
-			// 257th column in that case
-			if (0 > firstColIndex || firstColIndex > lastColIndex || lastColIndex > 256)
-				continue;
-
-			colinfo.m_isHidden     = (flags & 0x0001) >> 0;
-			colinfo.m_bitFlag      = (flags & 0x0002) >> 1;
-			colinfo.m_outlineLevel = (flags & 0x0700) >> 8;
-			colinfo.m_isCollapsed  = (flags & 0x1000) >> 12;
-
-			for (int i = firstColIndex; i <= lastColIndex; ++i) {
-				// Excel does 0 to 256 inclusive
-				if (i > 255)
-					break;
-				m_colinfoMap[i] = colinfo;
-			}
-        } else if (code == XL_DEFCOLWIDTH) {
-			m_defaultColWidth = m_book->readByte<unsigned short>(data, 0, 2);
-        } else if (code == XL_STANDARDWIDTH) {
-			m_standardWidth = m_book->readByte<unsigned short>(data, 0, 2);
-        } else if (code == XL_GCW) {
-			// Useless w/o COLINFO
-			if (!m_book->m_addStyle)
-				continue;
-
-			std::vector<int> iguff;
-			for (int i = 0; i < 8; ++i)
-				iguff.emplace_back(m_book->readByte<int>(data, 2 + i*4, 4));
-
-			m_gcw.clear();
-			for (auto& bits : iguff) {
-				for (int i = 0; i < 32; ++i) {
-					m_gcw.push_back(bits & 1);
-					bits >>= 1;
-				}
-			}
-        } else if (code == XL_BLANK) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
-
-//			putCell(rowIndex, colIndex, "", xfIndex);
-        } else if (code == XL_MULBLANK) {  // 00BE
-			if (!m_book->m_addStyle)
-				continue;
-
-			std::vector<unsigned short> result;
-			for (int i = 0; i < (size >> 1); ++i)
-				result.emplace_back(m_book->readByte<unsigned short>(data, 0 + i*2, 2));
-
-			auto mul_last = result.back();
-			int pos = 2;
-			for (int colx = result[1]; colx < mul_last+1; ++colx) {
-//				putCell(result[0], colx, "", result[pos]);
-				pos += 1;
-			}
-        } else if (code == XL_DIMENSION || code == XL_DIMENSION2) {
-			// Four zero bytes after some other record
-			if (size == 0)
-				continue;
-			if (m_book->m_biffVersion < 80) {
-				m_dimensionRowCount = m_book->readByte<unsigned short>(data, 2, 2);
-				m_dimensionColCount = m_book->readByte<unsigned short>(data, 6, 2);
-			}
-			else {
-				m_dimensionRowCount = m_book->readByte<int>(data, 4, 4);
-				m_dimensionColCount = m_book->readByte<unsigned short>(data, 10, 2);
-			}
-			m_rowCount = 0;
-			m_colCount = 0;
-
-			if (
-				(m_book->m_biffVersion == 21 || m_book->m_biffVersion == 30 || m_book->m_biffVersion == 40) &&
-				!m_book->m_xfList.empty() && !m_book->m_xfEpilogueDone
-			) {
-				Formatting formatting(m_book);
-				formatting.xfEpilogue();
-			}
-		}
-		else if (code == XL_HLINK) {
-			handleHyperlink(data);
-		}
-		else if (code == XL_QUICKTIP) {
-			handleQuicktip(data);
-		}
-		else if (code == XL_EOF) {
-			eofFound = true;
-			break;
-		}
-		else if (code == XL_OBJ) {
-			// Handle SHEET-level objects
-			MSObj savedObject;
-			handleMSObj(data, savedObject);
-			savedObjectId = savedObject.m_isNull ? -1 : savedObject.m_id;
-		}
-		//else if (code == XL_MSO_DRAWING) {
-		//	handleMsodrawingetc(code, size, data);
-		//}
-		else if (code == XL_TXO) {
-			MSTxo msTxo;
-			handleMSTxo(data, msTxo);
-			if (!msTxo.m_isNull && (savedObjectId > 0)) {
-				msTxos[savedObjectId] = msTxo;
-				savedObjectId = -1;
-			}
-		}
-		else if (code == XL_NOTE) {
-			handleNote(data, msTxos);
-		}
-		//else if (code == XL_FEAT11) {
-		//	handleFeat11(data);
-		//}
-		else if (find(BOF_CODES.begin(), BOF_CODES.end(), code) != BOF_CODES.end()) {
-			//unsigned short version = m_book->readByte<unsigned short>(data, 0, 2);
-			//unsigned short bofType = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short code2;
-
-			while (true) {
-				m_book->getRecordParts(code2, size, data);
-				if (code2 == XL_EOF)
-					break;
-			}
-		}
-		else if (code == XL_COUNTRY) {
-			// Handle country
-			m_book->m_countries = {
-				m_book->readByte<unsigned short>(data, 0, 2),
-				m_book->readByte<unsigned short>(data, 2, 2)
-			};
-		}
-		else if (code == XL_LABELRANGES) {
-			int pos = 0;
-			unpackCellRangeAddressListUpdatePos(m_rowLabelRanges, data, pos, 8);
-			unpackCellRangeAddressListUpdatePos(m_colLabelRanges, data, pos, 8);
-		}
-		//else if (code == XL_ARRAY) {
-		//	unsigned short firstRowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-		//	unsigned short lastRowIndex  = m_book->readByte<unsigned short>(data, 2, 2);
-		//	unsigned char  firstColIndex = m_book->readByte<unsigned char>(data, 4, 1);
-		//	unsigned char  lastColIndex  = m_book->readByte<unsigned char>(data, 5, 1);
-		//	unsigned char  flags         = m_book->readByte<unsigned char>(data, 6, 1);
-		//	unsigned short tokenLength   = m_book->readByte<unsigned short>(data, 12, 2);
-		//}
-		//else if (code == XL_SHRFMLA) {
-		//	unsigned short firstRowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-		//	unsigned short lastRowIndex  = m_book->readByte<unsigned short>(data, 2, 2);
-		//	unsigned char  firstColIndex = m_book->readByte<unsigned char>(data, 4, 1);
-		//	unsigned char  lastColIndex  = m_book->readByte<unsigned char>(data, 5, 1);
-		//	unsigned char  formulaCount  = m_book->readByte<unsigned char>(data, 7, 1);
-		//	unsigned short tokenLength   = m_book->readByte<unsigned short>(data, 8, 2);
-		//}
-		else if (code == XL_CONDFMT) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			//unsigned short cfCount    = m_book->readByte<unsigned short>(data, 0, 2);
-			//unsigned short needRecalc = m_book->readByte<unsigned short>(data, 2, 2);
-			//unsigned short rowIndex1  = m_book->readByte<unsigned short>(data, 4, 2);
-			//unsigned short rowIndex2  = m_book->readByte<unsigned short>(data, 6, 2);
-			//unsigned short colIndex1  = m_book->readByte<unsigned short>(data, 8, 2);
-			//unsigned short colIndex2  = m_book->readByte<unsigned short>(data, 10, 2);
-
-			int pos = 12;
-			std::vector<std::vector<int>> oList;  // Updated by function
-			unpackCellRangeAddressListUpdatePos(oList, data, pos, 8);
-		}
-		else if (code == XL_CF) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			//unsigned char  cfType = m_book->readByte<unsigned char>(data,  0, 1);
-			//unsigned char  cmpOp  = m_book->readByte<unsigned char>(data,  1, 1);
-			unsigned short size1  = m_book->readByte<unsigned short>(data, 2, 2);
-			unsigned short size2  = m_book->readByte<unsigned short>(data, 4, 2);
-			int  flags            = m_book->readByte<int>(data, 6, 4);
-			bool fontBlock        = (flags >> 26) & 1;
-			bool borderBlock      = (flags >> 28) & 1;
-			bool paletteBlock     = (flags >> 29) & 1;
-
-			int pos = 12;
-			if (fontBlock) {
-				//int fontHeight  = m_book->readByte<int>(data, 64, 4);
-				//int fontOptions = m_book->readByte<int>(data, 68, 4);
-				//unsigned short weight     = m_book->readByte<unsigned short>(data, 72, 2);
-				//unsigned short escapement = m_book->readByte<unsigned short>(data, 74, 2);
-				//unsigned char  underline  = m_book->readByte<unsigned char>(data, 76, 1);
-				//int fontColorIndex = m_book->readByte<int>(data, 80, 4);
-				//int twoBits        = m_book->readByte<int>(data, 88, 4);
-				//int fontEscapment  = m_book->readByte<int>(data, 92, 4);
-				//int fontUnderlying = m_book->readByte<int>(data, 96, 4);
-
-				//bool fontStyle    = (twoBits > 1) & 1;
-				//bool posture      = (fontOptions > 1) & 1;
-				//bool fontCancel   = (twoBits > 7) & 1;
-				//bool cancellation = (fontOptions > 7) & 1;
-				pos += 118;
-			}
-			if (borderBlock)
-				pos += 8;
-			if (paletteBlock)
-				pos += 4;
-			std::string formula1 = data.substr(pos, size1);
-			pos += size1;
-			std::string formula2 = data.substr(pos, size2);
-			pos += size2;
-		}
-		else if (code == XL_DEFAULTROWHEIGHT) {
-			unsigned short bits;
-			if (size == 4) {
-				bits = m_book->readByte<unsigned short>(data, 0, 2);
-				m_defaultRowHeight = m_book->readByte<unsigned short>(data, 2, 2);
-			}
-			else if (size == 2) {
-				bits = 0;
-				m_defaultRowHeight = m_book->readByte<unsigned short>(data, 0, 2);
-			}
-			else {
-				bits = 0;
-			}
-			m_isDefaultRowHeightMismatch     = bits & 1;
-			m_isDefaultRowHidden             = (bits >> 1) & 1;
-			m_hasDefaultAdditionalSpaceAbove = (bits >> 2) & 1;
-			m_hasDefaultAdditionalSpaceBelow = (bits >> 3) & 1;
-		}
-		else if (code == XL_MERGEDCELLS) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			int pos = 0;
-			unpackCellRangeAddressListUpdatePos(m_mergedCells, data, pos, 8);
-		}
-		else if (code == XL_WINDOW2) {
-			unsigned short options;
-			if (m_book->m_biffVersion >= 80 && size >= 14) {
-				options                           = m_book->readByte<unsigned short>(data, 0,  2);
-				m_firstVisibleRowIndex            = m_book->readByte<unsigned short>(data, 2,  2);
-				m_firstVisibleColIndex            = m_book->readByte<unsigned short>(data, 4,  2);
-				m_gridlineColorIndex              = m_book->readByte<unsigned short>(data, 6,  2);
-				m_cachedPageBreakPreviewMagFactor = m_book->readByte<unsigned short>(data, 8,  2);
-				m_cachedNormalViewMagFactor       = m_book->readByte<unsigned short>(data, 10, 2);
-			}
-			else {
-				options                = m_book->readByte<unsigned short>(data, 0, 2);
-				m_firstVisibleRowIndex = m_book->readByte<unsigned short>(data, 2, 2);
-				m_firstVisibleColIndex = m_book->readByte<unsigned short>(data, 4, 2);
-				m_gridlineColor = {
-					m_book->readByte<unsigned char>(data, 6, 1),
-					m_book->readByte<unsigned char>(data, 7, 1),
-					m_book->readByte<unsigned char>(data, 8, 1),
-				};
-				m_gridlineColorIndex = Formatting::getNearestColorIndex(m_book->m_colorMap, m_gridlineColor);
-			}
-
-			m_showFormula            = (options >> 0) & 1;
-			m_showGridLine           = (options >> 1) & 1;
-			m_showSheetHeader        = (options >> 2) & 1;
-			m_isFrozenPanes          = (options >> 3) & 1;
-			m_showZeroValue          = (options >> 4) & 1;
-			m_automaticGridLineColor = (options >> 5) & 1;
-			m_columnsRightToLeft     = (options >> 6) & 1;
-			m_showOutlineSymbol      = (options >> 7) & 1;
-			m_removeSplits           = (options >> 8) & 1;
-			m_isSheetSelected        = (options >> 9) & 1;
-			m_isSheetVisible         = (options >> 10) & 1;
-			m_showPageBreakPreview   = (options >> 11) & 1;
-		}
-		else if (code == XL_SCL) {
-			unsigned short num = m_book->readByte<unsigned short>(data, 0, 2);
-			unsigned short den = m_book->readByte<unsigned short>(data, 2, 2);
-			int result = 0;
-			if (den)
-				result = (num * 100);
-			if (!(10 <= result && result <= 400))
-				result = 100;
-			m_sclMagFactor = result;
-		}
-		else if (code == XL_PANE) {
-			m_vertSplitPos          = m_book->readByte<unsigned short>(data, 0, 2);
-			m_horzSplitPos          = m_book->readByte<unsigned short>(data, 2, 2);
-			m_horzSplitFirstVisible = m_book->readByte<unsigned short>(data, 4, 2);
-			m_vertSplitFirstVisible = m_book->readByte<unsigned short>(data, 6, 2);
-			m_splitActivePane       = m_book->readByte<unsigned char>(data, 8, 1);
-			m_hasPaneRecord         = true;
-		}
-		else if (code == XL_HORIZONTALBREAKS) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			//unsigned short breakCount = m_book->readByte<unsigned short>(data, 0, 2);
-			int pos = 2;
-			if (m_book->m_biffVersion < 80)
-				while (pos < size) {
-					m_horizontalPageBreaks.push_back({
-						m_book->readByte<unsigned short>(data, pos, 2),
-						0,
-						255
-					});
-					pos += 2;
-				}
-			else
-				while (pos < size) {
-					m_horizontalPageBreaks.push_back({
-						m_book->readByte<unsigned short>(data, pos,   2),
-						m_book->readByte<unsigned short>(data, pos+2, 2),
-						m_book->readByte<unsigned short>(data, pos+4, 2)
-					});
-					pos += 6;
-				}
-		}
-		else if (code == XL_VERTICALPAGEBREAKS) {
-			if (!m_book->m_addStyle)
-				continue;
-
-			//unsigned short breakCount = m_book->readByte<unsigned short>(data, 0, 2);
-			int pos = 2;
-			if (m_book->m_biffVersion < 80)
-				while (pos < size) {
-					m_verticalPageBreaks.push_back({
-						m_book->readByte<unsigned short>(data, pos, 2),
-						0,
-						65535
-					});
-					pos += 2;
-				}
-			else
-				while (pos < size) {
-					m_verticalPageBreaks.push_back({
-						m_book->readByte<unsigned short>(data, pos,   2),
-						m_book->readByte<unsigned short>(data, pos+2, 2),
-						m_book->readByte<unsigned short>(data, pos+4, 2)
-					});
-					pos += 6;
-				}
-		}
-		// All of the following are for BIFF <= 4W
-		else if (m_book->m_biffVersion <= 45) {
-			Formatting formatting(m_book);
-			if (code == XL_FORMAT || code == XL_FORMAT2)
-				formatting.handleFormat(data, code);
-			else if (code == XL_FONT || code == XL_FONT_B3B4)
-				formatting.handleFont(data);
-			else if (code == XL_STYLE) {
-				if (!m_book->m_xfEpilogueDone)
-					formatting.xfEpilogue();
-				formatting.handleStyle(data);
-			}
-			else if (code == XL_PALETTE)
-				formatting.handlePalette(data);
-			else if (code == XL_BUILTINFMTCOUNT)
-				m_book->m_builtinFormatCount = m_book->readByte<unsigned short>(data, 0, 2);
-			else if (code == XL_XF4 || code == XL_XF3 || code == XL_XF2)  // N.B. not XL_XF
-				formatting.handleXf(data);
-			else if (code == XL_DATEMODE)
-				m_book->m_dateMode = m_book->readByte<unsigned short>(data, 0, 2);
-			else if (code == XL_CODEPAGE) {
-				m_book->m_codePage = m_book->readByte<unsigned short>(data, 0, 2);
-				m_book->getEncoding();
-			}
-			else if (code == XL_WRITEACCESS)
-				m_book->handleWriteAccess(data);
-			else if (code == XL_IXFE)
-				m_ixfe = m_book->readByte<unsigned short>(data, 0, 2);
-			else if (code == XL_NUMBER_B2) {
-				unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
-				std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
-				double d = m_book->readByte<unsigned short>(data, 7, 4);
-
-                append(std::to_string(d));
-//				putCell(rowIndex, colIndex, std::to_string(d), fixedXfIndexB2(cellAttributes));
-			}
-			else if (code == XL_INTEGER) {
-				unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
-				std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
-				float d = m_book->readByte<unsigned short>(data, 7, 2);
-
-                append(std::to_string(d));
-//				putCell(rowIndex, colIndex, std::to_string(d), fixedXfIndexB2(cellAttributes));
-			}
-			else if (code == XL_LABEL_B2) {
-				unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
-				std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
-				std::string str = m_book->unpackString(data, 7, 1);
-
+                if (m_book->m_biffVersion < 80)
+                    str = m_book->unpackString(data, 6, 2);
+                else
+                    str = m_book->unpackUnicode(data, 6, 2);
                 append(str);
-//				putCell(rowIndex, colIndex, str, fixedXfIndexB2(cellAttributes));
-			}
-			else if (code == XL_BOOLERR_B2) {
-				unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
-				std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
-				unsigned char value        = m_book->readByte<unsigned char>(data, 7, 1);
-				//unsigned char hasError   = m_book->readByte<unsigned char>(data, 8, 1);
+                //			putCell(rowIndex, colIndex, str, xfIndex);
+            } else if (code == XL_RSTRING) {
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                int pos = 6;
+                std::string str;
+                std::vector<std::pair<unsigned short, unsigned short>> runlist;
 
-				//int cellType = hasError ? XL_CELL_ERROR : XL_CELL_BOOLEAN;
-                append(std::to_string(value));
-//				putCell(rowIndex, colIndex, std::to_string(value), fixedXfIndexB2(cellAttributes));
-			}
-			else if (code == XL_BLANK_B2) {
-				if (!m_book->m_addStyle)
-					continue;
-				unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
-				std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+                if (m_book->m_biffVersion < 80) {
+                    str = m_book->unpackStringUpdatePos(data, pos, 2);
+                    char nrt = data[pos];
+                    pos += 1;
+                    for (int i = 0; i < nrt; ++i) {
+                        runlist.emplace_back(
+                                    m_book->readByte<unsigned char>(data, pos,   1),
+                                    m_book->readByte<unsigned char>(data, pos+1, 1)
+                                    );
+                        pos += 2;
+                    }
+                } else {
+                    str = m_book->unpackUnicodeUpdatePos(data, pos, 2);
+                    unsigned short nrt = m_book->readByte<unsigned short>(data, pos, 2);
+                    pos += 2;
+                    for (int i = 0; i < nrt; ++i) {
+                        runlist.emplace_back(
+                                    m_book->readByte<unsigned short>(data, pos,   2),
+                                    m_book->readByte<unsigned short>(data, pos+2, 2)
+                                    );
+                        pos += 4;
+                    }
+                }
+                append(str);
+                //			putCell(rowIndex, colIndex, str, xfIndex);
+                m_richtextRunlistMap[{rowIndex, colIndex}] = runlist;
+            } else if (code == XL_RK) {
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                double d = unpackRK(data.substr(6, 4));
 
-//				putCell(rowIndex, colIndex, "", fixedXfIndexB2(cellAttributes));
-			}
-			else if (code == XL_EFONT) {
-				if (!m_book->m_addStyle)
-					continue;
-				m_book->m_fontList.back().m_color.m_index = m_book->readByte<unsigned short>(data, 0, 2);
-			}
-			else if (code == XL_ROW_B2) {
-				if (!m_book->m_addStyle)
-					continue;
+                append(std::to_string(d));
+                //			putCell(rowIndex, colIndex, std::to_string(d), xfIndex);
+            } else if (code == XL_MULRK) {
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short firstCol = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short lastCol  = m_book->readByte<unsigned short>(data, (int)data.size()-2, 2);
+                int pos = 4;
 
-				unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short flag1    = m_book->readByte<unsigned short>(data, 6, 2);
-				unsigned char  flag2    = m_book->readByte<unsigned char>(data, 10, 1);
+                for (int i = firstCol; i <= lastCol; ++i) {
+                    unsigned short xfIndex = m_book->readByte<unsigned short>(data, pos, 2);
+                    double d = unpackRK(data.substr(pos+2, 4));
+                    pos += 6;
 
-				if (!(0 <= rowIndex && rowIndex < m_maxRowCount))
-					continue;
-				int xfIndex;
-				// hasDefaultXfIndex is false
-				if (!(flag2 & 1)) {
-					xfIndex = -1;
-				}
-				// Seems XF index in the cellAttributes is dodgy
-				else if (size == 18) {
-					unsigned short xfx = m_book->readByte<unsigned short>(data, 16, 2);
-					xfIndex = fixedXfIndexB2("", xfx);
-				}
-				else {
-					std::string cellAttributes = data.substr(13, 3);
-					xfIndex = fixedXfIndexB2(cellAttributes);
-				}
+                    append(std::to_string(d));
+                    //				putCell(rowIndex, i, std::to_string(d), xfIndex);
+                }
+            } else if (code == XL_ROW) {
+                if (!m_book->m_addStyle)
+                    continue;
 
-				auto key = std::make_pair(flag1, flag2);
-				Rowinfo rowinfo;
-				if (rowinfoSharingDict.find(key) == rowinfoSharingDict.end()) {
-					rowinfo.m_height            = flag1 & 0x7fff;
-					rowinfo.m_hasDefaultHeight  = (flag1 >> 15) & 1;
-					rowinfo.m_hasDefaultXfIndex = flag2 & 1;
-					rowinfo.m_xfIndex           = xfIndex;
-				}
-				else {
-					rowinfo = rowinfoSharingDict[key];
-				}
-				m_rowinfoMap[rowIndex] = rowinfo;
-			}
-			else if (code == XL_COLWIDTH) {  // BIFF2 only
-				if (!m_book->m_addStyle)
-					continue;
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short flag1    = m_book->readByte<unsigned short>(data, 6, 2);
+                int flag2 = m_book->readByte<int>(data, 12, 4);
+                if (!(0 <= rowIndex && rowIndex < m_maxRowCount))
+                    continue;
 
-				unsigned char  firstColIndex = m_book->readByte<unsigned char>(data, 0, 1);
-				unsigned char  lastColIndex  = m_book->readByte<unsigned char>(data, 1, 1);
-				unsigned short width         = m_book->readByte<unsigned short>(data, 2, 2);
+                auto key = std::make_pair(flag1, flag2);
+                Rowinfo rowinfo;
+                if (rowinfoSharingDict.find(key) == rowinfoSharingDict.end()) {
+                    // Using upkbits() is far too slow on a file with 30 sheets each with 10K rows. So:
+                    rowinfo.m_height                   = flag1 & 0x7fff;
+                    rowinfo.m_hasDefaultHeight         = (flag1 >> 15) & 1;
+                    rowinfo.m_outlineLevel             = flag2 & 7;
+                    rowinfo.m_isOutlineGroupStartsEnds = (flag2 >> 4)  & 1;
+                    rowinfo.m_isHidden                 = (flag2 >> 5)  & 1;
+                    rowinfo.m_isHeightMismatch         = (flag2 >> 6)  & 1;
+                    rowinfo.m_hasDefaultXfIndex        = (flag2 >> 7)  & 1;
+                    rowinfo.m_xfIndex                  = (flag2 >> 16) & 0xfff;
+                    rowinfo.m_hasAdditionalSpaceAbove  = (flag2 >> 28) & 1;
+                    rowinfo.m_hasAdditionalSpaceBelow  = (flag2 >> 29) & 1;
+                    if (!rowinfo.m_hasDefaultXfIndex)
+                        rowinfo.m_xfIndex = -1;
+                    rowinfoSharingDict[key] = rowinfo;
+                } else
+                    rowinfo = rowinfoSharingDict[key];
+                m_rowinfoMap[rowIndex] = rowinfo;
+            } else if (code == 0x0006 || code == 0x0406 || code == 0x0206) {
+                unsigned short rowIndex;
+                unsigned short colIndex;
+                unsigned short xfIndex;
+                unsigned short flags;
+                std::string result;
+                if (m_book->m_biffVersion >= 50) {
+                    rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                    colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                    xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                    result   = m_book->readByte<std::string>(data, 6, 8);
+                    flags    = m_book->readByte<unsigned short>(data, 14, 2);
+                } else if (m_book->m_biffVersion >= 30) {
+                    rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                    colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                    xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                    result   = m_book->readByte<std::string>(data, 6, 8);
+                    flags    = m_book->readByte<unsigned short>(data, 14, 2);
+                }
+                // BIFF2
+                else {
+                    rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                    colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                    std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+                    result   = m_book->readByte<std::string>(data, 7, 8);
+                    flags   = m_book->readByte<unsigned char>(data, 15, 1);
 
-				if (firstColIndex > lastColIndex)
-					continue;
-				for (int i = firstColIndex; i <= lastColIndex; ++i) {
-					Colinfo colinfo;
-					if (m_colinfoMap.find(i) != m_colinfoMap.end()) {
-						m_colinfoMap[i].m_width = width;
-						//colinfo = m_colinfoMap[i];
-					}
-					else {
-						colinfo.m_width = width;
-						m_colinfoMap[i] = colinfo;
-					}
-				}
-			}
-			else if (code == XL_COLUMNDEFAULT) {  // BIFF2 only
-				if (!m_book->m_addStyle)
-					continue;
+                    xfIndex = fixedXfIndexB2(cellAttributes);
+                }
 
-				unsigned short firstColIndex = m_book->readByte<unsigned short>(data, 0, 2);
-				unsigned short lastColIndex  = m_book->readByte<unsigned short>(data, 2, 2);
-				// Warning: OOo docs wrong; firstColIndex <= colx < lastColIndex
-				if (0 > firstColIndex || firstColIndex >= lastColIndex || lastColIndex > 256)
-					lastColIndex = std::min((int)lastColIndex, 256);
-				for (int i = firstColIndex; i < lastColIndex; ++i) {
-					std::string cellAttributes = data.substr(4 + 3*(i - firstColIndex), 3);
-					int xfIndex = fixedXfIndexB2(cellAttributes);
+                if (result.substr(6, 2) == "\xFF\xFF") {
+                    char firstByte = result[0];
+                    if (firstByte == 0) {
+                        // Need to read next record (STRING)
+                        bool gotString = false;
+                        // "if flags & 8" applies only to SHRFMLA
+                        // Actually there's an optional SHRFMLA or ARRAY etc record to skip over
+                        unsigned short code2;
+                        unsigned short size2;
+                        std::string    data2;
 
-					Colinfo colinfo;
-					if (m_colinfoMap.find(i) != m_colinfoMap.end()) {
-						m_colinfoMap[i].m_xfIndex = xfIndex;
-						//colinfo = m_colinfoMap[i];
-					}
-					else {
-						colinfo.m_xfIndex = xfIndex;
-						m_colinfoMap[i]   = colinfo;
-					}
-				}
-			}
-			else if (code == XL_WINDOW2_B2) {  // BIFF 2 only
-				m_showFormula     = (data[0] != '\0');
-				m_showGridLine    = (data[1] != '\0');
-				m_showSheetHeader = (data[2] != '\0');
-				m_isFrozenPanes   = (data[3] != '\0');
-				m_showZeroValue   = (data[4] != '\0');
+                        m_book->getRecordParts(code2, size2, data2);
+                        if (code2 == XL_STRING || code2 == XL_STRING_B2)
+                            gotString = true;
+                        else if (find(XL_SHRFMLA_ETC.begin(), XL_SHRFMLA_ETC.end(), code2) == XL_SHRFMLA_ETC.end())
+                            throw std::logic_error(
+                                    "Expected SHRFMLA, ARRAY, TABLEOP* or STRING record; found " +
+                                    std::to_string(code2)
+                                    );
 
-				m_firstVisibleRowIndex   = m_book->readByte<unsigned short>(data, 5, 2);
-				m_firstVisibleColIndex   = m_book->readByte<unsigned short>(data, 7, 2);
-				m_automaticGridLineColor = m_book->readByte<unsigned char>(data,  9, 1);
+                        // Now for the STRING record
+                        if (!gotString) {
+                            m_book->getRecordParts(code2, size2, data2);
+                            if (code2 != XL_STRING && code2 != XL_STRING_B2)
+                                throw std::logic_error(
+                                        "Expected STRING record; found " +
+                                        std::to_string(code2)
+                                        );
+                        }
+                        std::string str = stringRecordContent(data2);
+                        append(str);
+                        //					putCell(rowIndex, colIndex, str, xfIndex);
+                    }
+                    // Boolean formula result
+                    else if (firstByte == 1) {
+                        append(std::string(1, result[2]));
+                        //					putCell(rowIndex, colIndex, std::string(1, result[2]), xfIndex);
+                    }
+                    // Error in cell
+                    else if (firstByte == 2) {
+                        append(std::string(1, result[2]));
+                        //					putCell(rowIndex, colIndex, std::string(1, result[2]), xfIndex);
+                    }
+                    // Empty ... i.e. empty (zero-length) string, NOT an empty cell
+                    else if (firstByte == 3) {
+                        //					putCell(rowIndex, colIndex, "", xfIndex);
+                    }
+                    else {
+                        throw std::logic_error(
+                                    "Unexpected special case (" + std::to_string(firstByte) +
+                                    ") in FORMULA"
+                                    );
+                    }
+                }
+                // It is a number
+                else {
+                    double d = m_book->readByte<double>(result, 0, 8);
+                    append(std::to_string(d));
+                    //				putCell(rowIndex, colIndex, std::to_string(d), xfIndex);
+                }
+            } else if (code == XL_BOOLERR) {
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+                unsigned char value     = m_book->readByte<unsigned char>(data, 6, 1);
+                //unsigned char hasError  = m_book->readByte<unsigned char>(data, 7, 1);
+                // Note: OOo Calc 2.0 writes 9-byte BOOLERR records. OOo docs say 8. Excel writes 8
+                //int cellType = hasError ? XL_CELL_ERROR : XL_CELL_BOOLEAN;
+                append(std::string(1, value));
+                //			putCell(rowIndex, colIndex, std::string(1, value), xfIndex);
+            } else if (code == XL_COLINFO) {
+                if (!m_book->m_addStyle)
+                    continue;
 
-				m_gridlineColor = {
-					m_book->readByte<unsigned char>(data, 10, 1),
-					m_book->readByte<unsigned char>(data, 11, 1),
-					m_book->readByte<unsigned char>(data, 12, 1)
-				};
-				m_gridlineColorIndex = Formatting::getNearestColorIndex(m_book->m_colorMap, m_gridlineColor);
-			}
-		}
-	}
-	if (!eofFound)
-		throw std::logic_error("Sheet "+ std::to_string(m_number) +
-							   " ("+ m_name + ") missing EOF record");
-//	tidyDimensions();
-	updateCookedFactors();
-    m_book->m_position = oldPosition;
+                Colinfo colinfo;
+                unsigned short firstColIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short lastColIndex  = m_book->readByte<unsigned short>(data, 2, 2);
+                colinfo.m_width              = m_book->readByte<unsigned short>(data, 4, 2);
+                colinfo.m_xfIndex            = m_book->readByte<unsigned char>(data, 6, 1);
+                unsigned short flags         = m_book->readByte<unsigned short>(data, 8, 2);
+                // #Colinfo.m_width is denominated in 256ths of a character, not in characters
+                // Note: 256 instead of 255 is a common mistake. Silently ignore non-existing
+                // 257th column in that case
+                if (0 > firstColIndex || firstColIndex > lastColIndex || lastColIndex > 256)
+                    continue;
+
+                colinfo.m_isHidden     = (flags & 0x0001) >> 0;
+                colinfo.m_bitFlag      = (flags & 0x0002) >> 1;
+                colinfo.m_outlineLevel = (flags & 0x0700) >> 8;
+                colinfo.m_isCollapsed  = (flags & 0x1000) >> 12;
+
+                for (int i = firstColIndex; i <= lastColIndex; ++i) {
+                    // Excel does 0 to 256 inclusive
+                    if (i > 255)
+                        break;
+                    m_colinfoMap[i] = colinfo;
+                }
+            } else if (code == XL_DEFCOLWIDTH) {
+                m_defaultColWidth = m_book->readByte<unsigned short>(data, 0, 2);
+            } else if (code == XL_STANDARDWIDTH) {
+                m_standardWidth = m_book->readByte<unsigned short>(data, 0, 2);
+            } else if (code == XL_GCW) {
+                // Useless w/o COLINFO
+                if (!m_book->m_addStyle)
+                    continue;
+
+                std::vector<int> iguff;
+                for (int i = 0; i < 8; ++i)
+                    iguff.emplace_back(m_book->readByte<int>(data, 2 + i*4, 4));
+
+                m_gcw.clear();
+                for (auto& bits : iguff) {
+                    for (int i = 0; i < 32; ++i) {
+                        m_gcw.push_back(bits & 1);
+                        bits >>= 1;
+                    }
+                }
+            } else if (code == XL_BLANK) {
+                if (!m_book->m_addStyle)
+                    continue;
+
+                unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short colIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short xfIndex  = m_book->readByte<unsigned short>(data, 4, 2);
+
+                //			putCell(rowIndex, colIndex, "", xfIndex);
+            } else if (code == XL_MULBLANK) {  // 00BE
+                if (!m_book->m_addStyle)
+                    continue;
+
+                std::vector<unsigned short> result;
+                for (int i = 0; i < (size >> 1); ++i)
+                    result.emplace_back(m_book->readByte<unsigned short>(data, 0 + i*2, 2));
+
+                auto mul_last = result.back();
+                int pos = 2;
+                for (int colx = result[1]; colx < mul_last+1; ++colx) {
+                    //				putCell(result[0], colx, "", result[pos]);
+                    pos += 1;
+                }
+            } else if (code == XL_DIMENSION || code == XL_DIMENSION2) {
+                // Four zero bytes after some other record
+                if (size == 0)
+                    continue;
+                if (m_book->m_biffVersion < 80) {
+                    m_dimensionRowCount = m_book->readByte<unsigned short>(data, 2, 2);
+                    m_dimensionColCount = m_book->readByte<unsigned short>(data, 6, 2);
+                }
+                else {
+                    m_dimensionRowCount = m_book->readByte<int>(data, 4, 4);
+                    m_dimensionColCount = m_book->readByte<unsigned short>(data, 10, 2);
+                }
+                m_rowCount = 0;
+                m_colCount = 0;
+
+                if (
+                        (m_book->m_biffVersion == 21 || m_book->m_biffVersion == 30 || m_book->m_biffVersion == 40) &&
+                        !m_book->m_xfList.empty() && !m_book->m_xfEpilogueDone
+                        ) {
+                    Formatting formatting(m_book);
+                    formatting.xfEpilogue();
+                }
+            }
+            else if (code == XL_HLINK) {
+                handleHyperlink(data);
+            }
+            else if (code == XL_QUICKTIP) {
+                handleQuicktip(data);
+            }
+            else if (code == XL_EOF) {
+                eofFound = true;
+                break;
+            }
+            else if (code == XL_OBJ) {
+                // Handle SHEET-level objects
+                MSObj savedObject;
+                handleMSObj(data, savedObject);
+                savedObjectId = savedObject.m_isNull ? -1 : savedObject.m_id;
+            }
+            //else if (code == XL_MSO_DRAWING) {
+            //	handleMsodrawingetc(code, size, data);
+            //}
+            else if (code == XL_TXO) {
+                MSTxo msTxo;
+                handleMSTxo(data, msTxo);
+                if (!msTxo.m_isNull && (savedObjectId > 0)) {
+                    msTxos[savedObjectId] = msTxo;
+                    savedObjectId = -1;
+                }
+            }
+            else if (code == XL_NOTE) {
+                handleNote(data, msTxos);
+            }
+            //else if (code == XL_FEAT11) {
+            //	handleFeat11(data);
+            //}
+            else if (find(BOF_CODES.begin(), BOF_CODES.end(), code) != BOF_CODES.end()) {
+                //unsigned short version = m_book->readByte<unsigned short>(data, 0, 2);
+                //unsigned short bofType = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short code2;
+
+                while (true) {
+                    m_book->getRecordParts(code2, size, data);
+                    if (code2 == XL_EOF)
+                        break;
+                }
+            }
+            else if (code == XL_COUNTRY) {
+                // Handle country
+                m_book->m_countries = {
+                    m_book->readByte<unsigned short>(data, 0, 2),
+                    m_book->readByte<unsigned short>(data, 2, 2)
+                };
+            }
+            else if (code == XL_LABELRANGES) {
+                int pos = 0;
+                unpackCellRangeAddressListUpdatePos(m_rowLabelRanges, data, pos, 8);
+                unpackCellRangeAddressListUpdatePos(m_colLabelRanges, data, pos, 8);
+            }
+            //else if (code == XL_ARRAY) {
+            //	unsigned short firstRowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+            //	unsigned short lastRowIndex  = m_book->readByte<unsigned short>(data, 2, 2);
+            //	unsigned char  firstColIndex = m_book->readByte<unsigned char>(data, 4, 1);
+            //	unsigned char  lastColIndex  = m_book->readByte<unsigned char>(data, 5, 1);
+            //	unsigned char  flags         = m_book->readByte<unsigned char>(data, 6, 1);
+            //	unsigned short tokenLength   = m_book->readByte<unsigned short>(data, 12, 2);
+            //}
+            //else if (code == XL_SHRFMLA) {
+            //	unsigned short firstRowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+            //	unsigned short lastRowIndex  = m_book->readByte<unsigned short>(data, 2, 2);
+            //	unsigned char  firstColIndex = m_book->readByte<unsigned char>(data, 4, 1);
+            //	unsigned char  lastColIndex  = m_book->readByte<unsigned char>(data, 5, 1);
+            //	unsigned char  formulaCount  = m_book->readByte<unsigned char>(data, 7, 1);
+            //	unsigned short tokenLength   = m_book->readByte<unsigned short>(data, 8, 2);
+            //}
+            else if (code == XL_CONDFMT) {
+                if (!m_book->m_addStyle)
+                    continue;
+
+                //unsigned short cfCount    = m_book->readByte<unsigned short>(data, 0, 2);
+                //unsigned short needRecalc = m_book->readByte<unsigned short>(data, 2, 2);
+                //unsigned short rowIndex1  = m_book->readByte<unsigned short>(data, 4, 2);
+                //unsigned short rowIndex2  = m_book->readByte<unsigned short>(data, 6, 2);
+                //unsigned short colIndex1  = m_book->readByte<unsigned short>(data, 8, 2);
+                //unsigned short colIndex2  = m_book->readByte<unsigned short>(data, 10, 2);
+
+                int pos = 12;
+                std::vector<std::vector<int>> oList;  // Updated by function
+                unpackCellRangeAddressListUpdatePos(oList, data, pos, 8);
+            }
+            else if (code == XL_CF) {
+                if (!m_book->m_addStyle)
+                    continue;
+
+                //unsigned char  cfType = m_book->readByte<unsigned char>(data,  0, 1);
+                //unsigned char  cmpOp  = m_book->readByte<unsigned char>(data,  1, 1);
+                unsigned short size1  = m_book->readByte<unsigned short>(data, 2, 2);
+                unsigned short size2  = m_book->readByte<unsigned short>(data, 4, 2);
+                int  flags            = m_book->readByte<int>(data, 6, 4);
+                bool fontBlock        = (flags >> 26) & 1;
+                bool borderBlock      = (flags >> 28) & 1;
+                bool paletteBlock     = (flags >> 29) & 1;
+
+                int pos = 12;
+                if (fontBlock) {
+                    //int fontHeight  = m_book->readByte<int>(data, 64, 4);
+                    //int fontOptions = m_book->readByte<int>(data, 68, 4);
+                    //unsigned short weight     = m_book->readByte<unsigned short>(data, 72, 2);
+                    //unsigned short escapement = m_book->readByte<unsigned short>(data, 74, 2);
+                    //unsigned char  underline  = m_book->readByte<unsigned char>(data, 76, 1);
+                    //int fontColorIndex = m_book->readByte<int>(data, 80, 4);
+                    //int twoBits        = m_book->readByte<int>(data, 88, 4);
+                    //int fontEscapment  = m_book->readByte<int>(data, 92, 4);
+                    //int fontUnderlying = m_book->readByte<int>(data, 96, 4);
+
+                    //bool fontStyle    = (twoBits > 1) & 1;
+                    //bool posture      = (fontOptions > 1) & 1;
+                    //bool fontCancel   = (twoBits > 7) & 1;
+                    //bool cancellation = (fontOptions > 7) & 1;
+                    pos += 118;
+                }
+                if (borderBlock)
+                    pos += 8;
+                if (paletteBlock)
+                    pos += 4;
+                std::string formula1 = data.substr(pos, size1);
+                pos += size1;
+                std::string formula2 = data.substr(pos, size2);
+                pos += size2;
+            }
+            else if (code == XL_DEFAULTROWHEIGHT) {
+                unsigned short bits;
+                if (size == 4) {
+                    bits = m_book->readByte<unsigned short>(data, 0, 2);
+                    m_defaultRowHeight = m_book->readByte<unsigned short>(data, 2, 2);
+                }
+                else if (size == 2) {
+                    bits = 0;
+                    m_defaultRowHeight = m_book->readByte<unsigned short>(data, 0, 2);
+                }
+                else {
+                    bits = 0;
+                }
+                m_isDefaultRowHeightMismatch     = bits & 1;
+                m_isDefaultRowHidden             = (bits >> 1) & 1;
+                m_hasDefaultAdditionalSpaceAbove = (bits >> 2) & 1;
+                m_hasDefaultAdditionalSpaceBelow = (bits >> 3) & 1;
+            }
+            else if (code == XL_MERGEDCELLS) {
+                if (!m_book->m_addStyle)
+                    continue;
+
+                int pos = 0;
+                unpackCellRangeAddressListUpdatePos(m_mergedCells, data, pos, 8);
+            }
+            else if (code == XL_WINDOW2) {
+                unsigned short options;
+                if (m_book->m_biffVersion >= 80 && size >= 14) {
+                    options                           = m_book->readByte<unsigned short>(data, 0,  2);
+                    m_firstVisibleRowIndex            = m_book->readByte<unsigned short>(data, 2,  2);
+                    m_firstVisibleColIndex            = m_book->readByte<unsigned short>(data, 4,  2);
+                    m_gridlineColorIndex              = m_book->readByte<unsigned short>(data, 6,  2);
+                    m_cachedPageBreakPreviewMagFactor = m_book->readByte<unsigned short>(data, 8,  2);
+                    m_cachedNormalViewMagFactor       = m_book->readByte<unsigned short>(data, 10, 2);
+                }
+                else {
+                    options                = m_book->readByte<unsigned short>(data, 0, 2);
+                    m_firstVisibleRowIndex = m_book->readByte<unsigned short>(data, 2, 2);
+                    m_firstVisibleColIndex = m_book->readByte<unsigned short>(data, 4, 2);
+                    m_gridlineColor = {
+                        m_book->readByte<unsigned char>(data, 6, 1),
+                        m_book->readByte<unsigned char>(data, 7, 1),
+                        m_book->readByte<unsigned char>(data, 8, 1),
+                    };
+                    m_gridlineColorIndex = Formatting::getNearestColorIndex(m_book->m_colorMap, m_gridlineColor);
+                }
+
+                m_showFormula            = (options >> 0) & 1;
+                m_showGridLine           = (options >> 1) & 1;
+                m_showSheetHeader        = (options >> 2) & 1;
+                m_isFrozenPanes          = (options >> 3) & 1;
+                m_showZeroValue          = (options >> 4) & 1;
+                m_automaticGridLineColor = (options >> 5) & 1;
+                m_columnsRightToLeft     = (options >> 6) & 1;
+                m_showOutlineSymbol      = (options >> 7) & 1;
+                m_removeSplits           = (options >> 8) & 1;
+                m_isSheetSelected        = (options >> 9) & 1;
+                m_isSheetVisible         = (options >> 10) & 1;
+                m_showPageBreakPreview   = (options >> 11) & 1;
+            }
+            else if (code == XL_SCL) {
+                unsigned short num = m_book->readByte<unsigned short>(data, 0, 2);
+                unsigned short den = m_book->readByte<unsigned short>(data, 2, 2);
+                int result = 0;
+                if (den)
+                    result = (num * 100);
+                if (!(10 <= result && result <= 400))
+                    result = 100;
+                m_sclMagFactor = result;
+            }
+            else if (code == XL_PANE) {
+                m_vertSplitPos          = m_book->readByte<unsigned short>(data, 0, 2);
+                m_horzSplitPos          = m_book->readByte<unsigned short>(data, 2, 2);
+                m_horzSplitFirstVisible = m_book->readByte<unsigned short>(data, 4, 2);
+                m_vertSplitFirstVisible = m_book->readByte<unsigned short>(data, 6, 2);
+                m_splitActivePane       = m_book->readByte<unsigned char>(data, 8, 1);
+                m_hasPaneRecord         = true;
+            }
+            else if (code == XL_HORIZONTALBREAKS) {
+                if (!m_book->m_addStyle)
+                    continue;
+
+                //unsigned short breakCount = m_book->readByte<unsigned short>(data, 0, 2);
+                int pos = 2;
+                if (m_book->m_biffVersion < 80)
+                    while (pos < size) {
+                        m_horizontalPageBreaks.push_back({
+                                                             m_book->readByte<unsigned short>(data, pos, 2),
+                                                             0,
+                                                             255
+                                                         });
+                        pos += 2;
+                    }
+                else
+                    while (pos < size) {
+                        m_horizontalPageBreaks.push_back({
+                                                             m_book->readByte<unsigned short>(data, pos,   2),
+                                                             m_book->readByte<unsigned short>(data, pos+2, 2),
+                                                             m_book->readByte<unsigned short>(data, pos+4, 2)
+                                                         });
+                        pos += 6;
+                    }
+            }
+            else if (code == XL_VERTICALPAGEBREAKS) {
+                if (!m_book->m_addStyle)
+                    continue;
+
+                //unsigned short breakCount = m_book->readByte<unsigned short>(data, 0, 2);
+                int pos = 2;
+                if (m_book->m_biffVersion < 80)
+                    while (pos < size) {
+                        m_verticalPageBreaks.push_back({
+                                                           m_book->readByte<unsigned short>(data, pos, 2),
+                                                           0,
+                                                           65535
+                                                       });
+                        pos += 2;
+                    }
+                else
+                    while (pos < size) {
+                        m_verticalPageBreaks.push_back({
+                                                           m_book->readByte<unsigned short>(data, pos,   2),
+                                                           m_book->readByte<unsigned short>(data, pos+2, 2),
+                                                           m_book->readByte<unsigned short>(data, pos+4, 2)
+                                                       });
+                        pos += 6;
+                    }
+            }
+            // All of the following are for BIFF <= 4W
+            else if (m_book->m_biffVersion <= 45) {
+                Formatting formatting(m_book);
+                if (code == XL_FORMAT || code == XL_FORMAT2)
+                    formatting.handleFormat(data, code);
+                else if (code == XL_FONT || code == XL_FONT_B3B4)
+                    formatting.handleFont(data);
+                else if (code == XL_STYLE) {
+                    if (!m_book->m_xfEpilogueDone)
+                        formatting.xfEpilogue();
+                    formatting.handleStyle(data);
+                }
+                else if (code == XL_PALETTE)
+                    formatting.handlePalette(data);
+                else if (code == XL_BUILTINFMTCOUNT)
+                    m_book->m_builtinFormatCount = m_book->readByte<unsigned short>(data, 0, 2);
+                else if (code == XL_XF4 || code == XL_XF3 || code == XL_XF2)  // N.B. not XL_XF
+                    formatting.handleXf(data);
+                else if (code == XL_DATEMODE)
+                    m_book->m_dateMode = m_book->readByte<unsigned short>(data, 0, 2);
+                else if (code == XL_CODEPAGE) {
+                    m_book->m_codePage = m_book->readByte<unsigned short>(data, 0, 2);
+                    m_book->getEncoding();
+                }
+                else if (code == XL_WRITEACCESS)
+                    m_book->handleWriteAccess(data);
+                else if (code == XL_IXFE)
+                    m_ixfe = m_book->readByte<unsigned short>(data, 0, 2);
+                else if (code == XL_NUMBER_B2) {
+                    unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
+                    std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+                    double d = m_book->readByte<unsigned short>(data, 7, 4);
+
+                    append(std::to_string(d));
+                    //				putCell(rowIndex, colIndex, std::to_string(d), fixedXfIndexB2(cellAttributes));
+                }
+                else if (code == XL_INTEGER) {
+                    unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
+                    std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+                    float d = m_book->readByte<unsigned short>(data, 7, 2);
+
+                    append(std::to_string(d));
+                    //				putCell(rowIndex, colIndex, std::to_string(d), fixedXfIndexB2(cellAttributes));
+                }
+                else if (code == XL_LABEL_B2) {
+                    unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
+                    std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+                    std::string str = m_book->unpackString(data, 7, 1);
+
+                    append(str);
+                    //				putCell(rowIndex, colIndex, str, fixedXfIndexB2(cellAttributes));
+                }
+                else if (code == XL_BOOLERR_B2) {
+                    unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
+                    std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+                    unsigned char value        = m_book->readByte<unsigned char>(data, 7, 1);
+                    //unsigned char hasError   = m_book->readByte<unsigned char>(data, 8, 1);
+
+                    //int cellType = hasError ? XL_CELL_ERROR : XL_CELL_BOOLEAN;
+                    append(std::to_string(value));
+                    //				putCell(rowIndex, colIndex, std::to_string(value), fixedXfIndexB2(cellAttributes));
+                }
+                else if (code == XL_BLANK_B2) {
+                    if (!m_book->m_addStyle)
+                        continue;
+                    unsigned short rowIndex    = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short colIndex    = m_book->readByte<unsigned short>(data, 2, 2);
+                    std::string cellAttributes = m_book->readByte<std::string>(data, 4, 3);
+
+                    //				putCell(rowIndex, colIndex, "", fixedXfIndexB2(cellAttributes));
+                }
+                else if (code == XL_EFONT) {
+                    if (!m_book->m_addStyle)
+                        continue;
+                    m_book->m_fontList.back().m_color.m_index = m_book->readByte<unsigned short>(data, 0, 2);
+                }
+                else if (code == XL_ROW_B2) {
+                    if (!m_book->m_addStyle)
+                        continue;
+
+                    unsigned short rowIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short flag1    = m_book->readByte<unsigned short>(data, 6, 2);
+                    unsigned char  flag2    = m_book->readByte<unsigned char>(data, 10, 1);
+
+                    if (!(0 <= rowIndex && rowIndex < m_maxRowCount))
+                        continue;
+                    int xfIndex;
+                    // hasDefaultXfIndex is false
+                    if (!(flag2 & 1)) {
+                        xfIndex = -1;
+                    }
+                    // Seems XF index in the cellAttributes is dodgy
+                    else if (size == 18) {
+                        unsigned short xfx = m_book->readByte<unsigned short>(data, 16, 2);
+                        xfIndex = fixedXfIndexB2("", xfx);
+                    }
+                    else {
+                        std::string cellAttributes = data.substr(13, 3);
+                        xfIndex = fixedXfIndexB2(cellAttributes);
+                    }
+
+                    auto key = std::make_pair(flag1, flag2);
+                    Rowinfo rowinfo;
+                    if (rowinfoSharingDict.find(key) == rowinfoSharingDict.end()) {
+                        rowinfo.m_height            = flag1 & 0x7fff;
+                        rowinfo.m_hasDefaultHeight  = (flag1 >> 15) & 1;
+                        rowinfo.m_hasDefaultXfIndex = flag2 & 1;
+                        rowinfo.m_xfIndex           = xfIndex;
+                    }
+                    else {
+                        rowinfo = rowinfoSharingDict[key];
+                    }
+                    m_rowinfoMap[rowIndex] = rowinfo;
+                }
+                else if (code == XL_COLWIDTH) {  // BIFF2 only
+                    if (!m_book->m_addStyle)
+                        continue;
+
+                    unsigned char  firstColIndex = m_book->readByte<unsigned char>(data, 0, 1);
+                    unsigned char  lastColIndex  = m_book->readByte<unsigned char>(data, 1, 1);
+                    unsigned short width         = m_book->readByte<unsigned short>(data, 2, 2);
+
+                    if (firstColIndex > lastColIndex)
+                        continue;
+                    for (int i = firstColIndex; i <= lastColIndex; ++i) {
+                        Colinfo colinfo;
+                        if (m_colinfoMap.find(i) != m_colinfoMap.end()) {
+                            m_colinfoMap[i].m_width = width;
+                            //colinfo = m_colinfoMap[i];
+                        }
+                        else {
+                            colinfo.m_width = width;
+                            m_colinfoMap[i] = colinfo;
+                        }
+                    }
+                }
+                else if (code == XL_COLUMNDEFAULT) {  // BIFF2 only
+                    if (!m_book->m_addStyle)
+                        continue;
+
+                    unsigned short firstColIndex = m_book->readByte<unsigned short>(data, 0, 2);
+                    unsigned short lastColIndex  = m_book->readByte<unsigned short>(data, 2, 2);
+                    // Warning: OOo docs wrong; firstColIndex <= colx < lastColIndex
+                    if (0 > firstColIndex || firstColIndex >= lastColIndex || lastColIndex > 256)
+                        lastColIndex = std::min((int)lastColIndex, 256);
+                    for (int i = firstColIndex; i < lastColIndex; ++i) {
+                        std::string cellAttributes = data.substr(4 + 3*(i - firstColIndex), 3);
+                        int xfIndex = fixedXfIndexB2(cellAttributes);
+
+                        Colinfo colinfo;
+                        if (m_colinfoMap.find(i) != m_colinfoMap.end()) {
+                            m_colinfoMap[i].m_xfIndex = xfIndex;
+                            //colinfo = m_colinfoMap[i];
+                        }
+                        else {
+                            colinfo.m_xfIndex = xfIndex;
+                            m_colinfoMap[i]   = colinfo;
+                        }
+                    }
+                }
+                else if (code == XL_WINDOW2_B2) {  // BIFF 2 only
+                    m_showFormula     = (data[0] != '\0');
+                    m_showGridLine    = (data[1] != '\0');
+                    m_showSheetHeader = (data[2] != '\0');
+                    m_isFrozenPanes   = (data[3] != '\0');
+                    m_showZeroValue   = (data[4] != '\0');
+
+                    m_firstVisibleRowIndex   = m_book->readByte<unsigned short>(data, 5, 2);
+                    m_firstVisibleColIndex   = m_book->readByte<unsigned short>(data, 7, 2);
+                    m_automaticGridLineColor = m_book->readByte<unsigned char>(data,  9, 1);
+
+                    m_gridlineColor = {
+                        m_book->readByte<unsigned char>(data, 10, 1),
+                        m_book->readByte<unsigned char>(data, 11, 1),
+                        m_book->readByte<unsigned char>(data, 12, 1)
+                    };
+                    m_gridlineColorIndex = Formatting::getNearestColorIndex(m_book->m_colorMap, m_gridlineColor);
+                }
+            }
+        }
+        if (!eofFound)
+            throw std::logic_error("Sheet "+ std::to_string(m_number) +
+                                   " ("+ m_name + ") missing EOF record");
+        //	tidyDimensions();
+        updateCookedFactors();
+        m_book->m_position = oldPosition;
+    } catch (const std::logic_error &error) {
+        std::cout << error.what() << std::endl;
+    }
 }
 
 void Sheet::append(const std::string &value)
@@ -1276,8 +1280,8 @@ void Sheet::handleHyperlink(const std::string& data) {
 		hlink.m_textmark = getNullTerminatedUnicode(data, offset);
 
 	int extraByteCount = recordSize - offset;
-	if (extraByteCount < 0)
-		throw std::logic_error("Bug or corrupt file, send copy of input file for debugging");
+    if (extraByteCount < 0)
+        throw std::logic_error("Bug or corrupt file, send copy of input file for debugging");
 
 	m_hyperlinkList.push_back(hlink);
 	for (int i = hlink.m_firstRowIndex; i <= hlink.m_lastRowIndex; ++i)

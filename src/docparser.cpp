@@ -69,12 +69,13 @@ std::string DocParser::convertFile(const std::string &filename)
         } else if (!strcasecmp(suffix.c_str(), "pdf")) {
             document.reset(new pdf::Pdf(filename));
         } else {
-            std::cout << "Unsupported file extension: " << filename << std::endl;
-            throw "";
+            throw std::logic_error("Unsupported file extension: " + filename);
         }
 
         document->convert();
         content = document->m_text;
+    } catch(const std::logic_error &error) {
+        std::cout << error.what() << std::endl;
     } catch (...) {
         std::cerr << "Parse failed: " << filename << std::endl;
     }

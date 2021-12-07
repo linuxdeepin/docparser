@@ -102,9 +102,21 @@ int  Ppt::convert(bool addStyle, bool extractImages, char mergingMode) {
 void Ppt::parsePPT(const std::string &ppd)
 {
     size_t offset = 0;
+    size_t surplusSize = 0;
+    std::vector<unsigned char> rec(8);
     while (offset < ppd.size()) {
-        auto type = getRecordType(ppd, offset);
-        auto len  = getRecordLength(ppd, offset);
+        surplusSize = ppd.size() - offset;
+        if (surplusSize < 8) {
+            parseRecord(ppd, offset, RT_END_DOCUMENT_ATOM, 0);
+            return;
+        }
+
+        rec.assign(ppd.begin() + offset, ppd.begin() + offset + 8);
+        if (rec.size() < 8)
+            break;
+
+        auto type = getRecordType(rec.begin() + 2);
+        auto len  = getRecordLength(rec.begin() + 4);
         offset += 8;
         parseRecord(ppd, offset, type, len);
     }
@@ -161,6 +173,7 @@ void Ppt::parseRecord(const std::string &ppd, size_t &offset, int recType, ulong
     case RT_SLIDE:
     case RT_LIST:
     case RT_DOCUMENT:
+    case RT_SLIDE_BASE:
     case RT_SLIDE_LIST_WITH_TEXT:
         break;
     case RT_END_DOCUMENT_ATOM:
@@ -174,32 +187,14 @@ void Ppt::parseRecord(const std::string &ppd, size_t &offset, int recType, ulong
 }
 
 // private:
-unsigned short Ppt::getRecordLength(const std::string& stream, size_t offset,
-									  unsigned short recType) const
+unsigned int Ppt::getRecordLength(std::vector<unsigned char>::const_iterator buffer) const
 {
-    if(stream == ""){
-        return 0;
-    }
-
-	std::string rh = stream.substr(offset, 8);
-	if (recType != 0 && recType != readByte<unsigned short>(rh, 2, 2))
-		return 0;
-	return readByte<int>(rh, 4, 4);
+    return (unsigned long)(*buffer) | ((unsigned long)(*(buffer + 1 )) << 8L) | ((unsigned long)(*(buffer + 2)) << 16L) | ((unsigned long)(*(buffer + 3)) << 24L);
 }
 
-unsigned short Ppt::getRecordType(const std::string& stream, size_t offset) const {
-    if(stream == ""){
-        return 0;
-    }
-	std::string rh = stream.substr(offset, 8);
-	return readByte<unsigned short>(rh, 2, 2);
-}
-
-std::string Ppt::getRecord(const std::string& stream, size_t offset, unsigned short recType) const {
-	unsigned short length = getRecordLength(stream, offset, recType);
-	if (length == 0)
-		return "";
-	return stream.substr(offset + 8, length);
+unsigned short Ppt::getRecordType(std::vector<unsigned char>::const_iterator buffer) const
+{
+    return (unsigned short int)(*buffer) | ((unsigned short int)(*(buffer + 1)) << 8);
 }
 
 void Ppt::addParagraph(const std::string& text, pugi::xml_node& htmlNode) const {

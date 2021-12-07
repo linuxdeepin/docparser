@@ -72,8 +72,7 @@ private:
 	 *     Structure length
 	 * @since 1.0
 	 */
-	unsigned short getRecordLength(const std::string& stream, size_t offset,
-									 unsigned short recType = 0) const;
+    unsigned int getRecordLength(std::vector<unsigned char>::const_iterator buffer) const;
 
 	/**
 	 * @brief
@@ -86,24 +85,7 @@ private:
 	 *     Structure type
 	 * @since 1.0
 	 */
-    unsigned short getRecordType(const std::string& stream, size_t offset) const;
-
-	/**
-	 * @brief
-	 *     Get record data from stream by offset, possibly a given type
-	 * @note
-	 *     Title is not sent back
-	 * @param[in] stream
-	 *     Stream data
-	 * @param[in] offset
-	 *     Structure offset
-	 * @param[in] recType
-	 *     Structure type
-	 * @return
-	 *     Record data
-	 * @since 1.0
-	 */
-	std::string getRecord(const std::string& stream, size_t offset, unsigned short recType = 0) const;
+    unsigned short getRecordType(std::vector<unsigned char>::const_iterator buffer) const;
 
 	/**
 	 * @brief
