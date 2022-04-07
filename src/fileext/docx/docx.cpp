@@ -399,7 +399,11 @@ void Docx::buildList(const pugi::xml_node& xmlNode) {
         if (m_numberingMap.find(numId) == m_numberingMap.end())
             continue;
 
-		std::string listType = m_numberingMap[numId][ilvl];
+        const auto &list = m_numberingMap[numId];
+        if (ilvl + 1 > list.size())
+            continue;
+
+        std::string listType = list[ilvl];
 		if (listType.empty())
 			listType = "decimal";
 
