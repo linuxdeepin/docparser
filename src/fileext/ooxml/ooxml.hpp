@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "utils/miniz.h"
+#include "utils/miniz/miniz.h"
 #include "utils/pugixml.hpp"
 
 
