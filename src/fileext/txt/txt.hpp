@@ -14,19 +14,8 @@
 
 #include "fileext.hpp"
 
-
-/**
- * @namespace txt
- * @brief
- *     TXT files into HTML сonverter
- */
 namespace txt {
 
-/**
- * @class Txt
- * @brief
- *     TXT files into HTML сonverter
- */
 class Txt: public fileext::FileExtension {
 public:
 	/**
@@ -51,24 +40,6 @@ public:
 	 * @since 1.0
 	 */
     int convert(bool addStyle = true, bool extractImages = false, char mergingMode = 0) override;
-
-private:
-	/**
-	 * @brief
-	 *     Parse global elements
-	 * @since 1.0
-	 */
-	void parseGlobalElements();
-
-	/**
-	 * @brief
-	 *     Get images (extract local files or download from url)
-	 * @since 1.1
-	 */
-	void getImages();
-
-	/** HTML content */
-	std::string m_html;
 };
 
 }  // End namespace
