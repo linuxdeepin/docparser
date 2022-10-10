@@ -9,7 +9,7 @@ license=('GPL3')
 depends=('poppler')
 makedepends=('qt5-tools')
 conflicts=('docparser')
-replaces=('docparser')
+provides=('docparser')
 groups=('deepin-git')
 source=('source.tar.gz')
 
