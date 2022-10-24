@@ -23,32 +23,33 @@ Files: debian/*
 Copyright: None
 License: LGPL-3.0-or-later
 
-Files: src/fileext/* src/utils/encoding.* src/utils/tools.*
+Files: 3rdpart/fileext/* 3rdpart/utils/encoding.* 3rdpart/utils/tools.*
 Copyright: 2018 Dmitry Ryutov
 License: MIT
 
-Files: src/utils/pugixml.*
-Copyright:  2006-2017, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
-License: MIT
-
-Files: src/utils/getoptpp.*
+# getoptpp
+Files: 3rdpart/utils/getoptpp.*
 Copyright: Daniel Gutson, FuDePAN 2007-2010
 License: BSL-1.0
 
-Files: src/utils/json.*
+# json
+Files: 3rdpart/utils/json.*
 Copyright: 2013-2017 Niels Lohmann <http://nlohmann.me>.
 License: MIT
 
-Files: src/utils/lodepng.*
+# lodepng
+Files: 3rdpart/utils/lodepng.*
 Copyright: 2005-2018 Lode Vandevenne
 License: MIT
 
-Files: src/utils/pugi*
+# pugixml
+Files: 3rdpart/utils/pugi*
 Copyright: 2006-2017, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
 	   2003, by Kristen Wegner (kristen@tima.net)
 License: MIT
 
-Files: src/utils/miniz/*
+# miniz
+Files: 3rdpart/utils/miniz/*
 Copyright: 2013-2014 RAD Game Tools and Valve Software
 	   2010-2014 Rich Geldreich and Tenacious Software LLC
 License: MIT
