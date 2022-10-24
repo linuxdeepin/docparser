@@ -15,14 +15,16 @@ QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter
 #QMAKE_CXXFLAGS += -g -fsanitize=undefined,address -O2
 #QMAKE_LFLAGS += -g -fsanitize=undefined,address -O2
 
-include(utils/utils.pri)
-include(fileext/fileext.pri)
+include($$PWD/../3rdpart/utils/utils.pri)
+include($$PWD/../3rdpart/fileext/fileext.pri)
 
 HEADERS += \
     docparser.h
 
 SOURCES += \
     docparser.cpp
+
+INCLUDEPATH += $$PWD/../3rdpart
 
 isEmpty(PREFIX): PREFIX = /usr
 
