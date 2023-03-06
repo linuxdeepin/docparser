@@ -7,7 +7,9 @@ Build-Depends:
  qtbase5-dev,
  qt5-qmake,
  pkg-config,
- libpoppler-cpp-dev
+ libpoppler-cpp-dev,
+ libzip-dev,
+ libpugixml-dev
 Standards-Version: 4.3.0
 
 Package: libdocparser
