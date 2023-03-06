@@ -3,7 +3,7 @@ TARGET = docparser
 TEMPLATE = lib
 
 CONFIG += c++11 link_pkgconfig
-PKGCONFIG += poppler-cpp
+PKGCONFIG += poppler-cpp libzip pugixml
 
 #安全编译参数
 QMAKE_CFLAGS += -fstack-protector-strong -D_FORTITY_SOURCE=1 -z noexecstack -pie -fPIC -z lazy
@@ -15,8 +15,7 @@ QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter
 #QMAKE_CXXFLAGS += -g -fsanitize=undefined,address -O2
 #QMAKE_LFLAGS += -g -fsanitize=undefined,address -O2
 
-include($$PWD/../3rdpart/utils/utils.pri)
-include($$PWD/../3rdpart/fileext/fileext.pri)
+include($$PWD/../3rdparty/3rdparty.pri)
 
 HEADERS += \
     docparser.h
@@ -24,7 +23,7 @@ HEADERS += \
 SOURCES += \
     docparser.cpp
 
-INCLUDEPATH += $$PWD/../3rdpart
+INCLUDEPATH += $$PWD/../3rdparty/libs
 
 isEmpty(PREFIX): PREFIX = /usr
 

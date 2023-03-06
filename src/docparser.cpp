@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <iostream>
+#include <string.h>
 
 std::string DocParser::convertFile(const std::string &filename)
 {
