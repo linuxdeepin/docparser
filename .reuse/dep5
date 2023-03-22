@@ -4,7 +4,7 @@ Upstream-Contact: Uniontech Software Technology Co., Ltd.
 Source: https://github.com/linuxdeepin/docparser
 
 # ignore
-Files: .github/* .gitignore archlinux/* .git/*
+Files: .github/* .gitignore archlinux/* .git/* .obs/workflows.yml
 Copyright: None
 License: CC0-1.0
 
