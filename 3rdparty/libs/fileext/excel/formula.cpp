@@ -388,12 +388,19 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                 }
                 // Add, Sub, Mul, Div, Power, tConcat, tLT, ..., tNE
                 else if (0x03 <= opCode && opCode <= 0x0E) {
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     binOperation(opCode, stack);
                 }
                 // tIsect
                 else if (opCode == 0x0F) {
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
+
                     Operand rightOp = stack.back();
                     stack.pop_back();
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     Operand leftOp  = stack.back();
                     stack.pop_back();
                     int rank = 80;  // #Check#
@@ -435,8 +442,12 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                 }
                 // tList
                 else if (opCode == 0x10) {
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     Operand rightOp = stack.back();
                     stack.pop_back();
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     Operand leftOp  = stack.back();
                     stack.pop_back();
                     int rank = 80;  // #Check#
@@ -472,8 +483,12 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                 }
                 // tRange
                 else if (opCode == 0x11) {
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     Operand rightOp = stack.back();
                     stack.pop_back();
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     Operand leftOp  = stack.back();
                     stack.pop_back();
                     int rank = 80;  // #Check#
@@ -514,6 +529,8 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                 }
                 // tUplus, tUminus, tPercent
                 else if (0x12 <= opCode && opCode <= 0x14) {
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     unaryOperation(opCode, stack, oNUM);
                 }
                 // tParen
@@ -547,6 +564,8 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                         size = nc * 2 + 6;
                     else if (subop == 0x10) {  // Sum (single arg)
                         size = 4;
+                        if (stack.empty())
+                            throw std::logic_error("stack is empty");
                         Operand leftOp = stack.back();
                         stack[stack.size()-1] = Operand(oNUM, {}, FUNC_RANK, "SUM("+ leftOp.m_text +")");
                     }
@@ -619,6 +638,8 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                         for (int i = 0; i < argCount; ++i) {
                             if (i != 0)
                                 argtext += LIST_SEPARATOR;
+                            if (stack.empty())
+                                throw std::logic_error("stack is empty");
                             argtext += stack.back().m_text;
                             stack.pop_back();
                         }
@@ -648,11 +669,15 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                     for (int i = 0; i < argCount; ++i) {
                         if (i != 0)
                             argtext += LIST_SEPARATOR;
+                        if (stack.empty())
+                            throw std::logic_error("stack is empty");
                         argtext += stack.back().m_text;
                     }
                     std::string opText = funcName +"("+ argtext +")";
                     Operand res(oUNK, {}, FUNC_RANK, opText);
 
+                    if (stack.empty())
+                        throw std::logic_error("stack is empty");
                     auto& testOp  = stack[stack.size() - argCount];
                     int testValue = 0;
                     try {
@@ -675,6 +700,8 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                                 int respos = -argCount + 2 - testValue;
                                 if (respos < 0)
                                     respos = (int)stack.size() - respos;
+                                if (respos > stack.size())
+                                    return;
                                 auto& chosen = stack[respos];
                                 if (chosen.m_kind == oMSNG) {
                                     res.m_kind      = oNUM;
@@ -694,6 +721,8 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                             if (respos < 0)
                                 respos = (int)stack.size() - respos;
 
+                            if (respos > stack.size())
+                                return;
                             auto& chosen = stack[respos];
                             if (chosen.m_kind == oMSNG){
                                 res.m_kind      = oNUM;
