@@ -1260,9 +1260,15 @@ void Formula::adjustCellAddressBiff7(std::vector<int>& address, int rowValue, in
 
 void Formula::getExternalSheetLocalRange(int& sheetIndex1, int& sheetIndex2, int refIndex) const {
     try {
+        if (refIndex >= m_book->m_externalSheetInfo.size())
+            throw "";
+
         int refRecordIndex     = m_book->m_externalSheetInfo[refIndex][0];
         int refFirstSheetIndex = m_book->m_externalSheetInfo[refIndex][1];
         int refLastSheetIndex  = m_book->m_externalSheetInfo[refIndex][2];
+        if (std::max(refFirstSheetIndex, refLastSheetIndex) >= m_book->m_sheetMap.size())
+            throw "";
+
         int xlSheetIndex1      = m_book->m_sheetMap[refFirstSheetIndex];
         int xlSheetIndex2      = m_book->m_sheetMap[refLastSheetIndex];
 
