@@ -23,6 +23,7 @@
 
 #include "fileext/fileext.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace xlsb {
