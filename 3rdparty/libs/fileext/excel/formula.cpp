@@ -750,7 +750,7 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                     evaluateFormula(targetName, targetNameIndex, level+1);
 
                 Operand res(oUNK);
-                if (!(targetName.m_macro || targetName.m_isBinary || targetName.m_hasError))
+                if (!targetName.m_stack.empty() && !(targetName.m_macro || targetName.m_isBinary || targetName.m_hasError))
                     res = targetName.m_stack[0];
                 res.m_rank = LEAF_RANK;
 
