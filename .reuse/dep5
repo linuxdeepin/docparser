@@ -24,8 +24,10 @@ Copyright: None
 License: LGPL-3.0-or-later
 
 # 3rdparty
-Files: 3rdparty/*
+Files: 3rdparty/libs/*
 Copyright: 2018 Dmitry Ryutov
 License: MIT
 
-
+Files: 3rdparty/utils/*
+Copyright: None
+License: MIT

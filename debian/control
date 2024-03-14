@@ -9,7 +9,11 @@ Build-Depends:
  pkg-config,
  libpoppler-cpp-dev,
  libzip-dev,
- libpugixml-dev
+ libpugixml-dev,
+ libfreetype6-dev,
+ libxml2-dev,
+ uuid-dev,
+ libtinyxml2-dev
 Standards-Version: 4.3.0
 
 Package: libdocparser

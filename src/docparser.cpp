@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "docparser.h"
+#include "ofd/ofd.h"
 
 #include "fileext/doc/doc.hpp"
 #include "fileext/docx/docx.hpp"
@@ -68,6 +69,8 @@ std::string DocParser::convertFile(const std::string &filename)
             document.reset(new ppt::Ppt(filename));
         } else if (!strcasecmp(suffix.c_str(), "pdf")) {
             document.reset(new pdf::Pdf(filename));
+        } else if (!strcasecmp(suffix.c_str(), "ofd")) {
+            document.reset(new ofd::Ofd(filename));
         } else {
             throw std::logic_error("Unsupported file extension: " + filename);
         }

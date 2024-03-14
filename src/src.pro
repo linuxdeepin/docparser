@@ -3,7 +3,7 @@ TARGET = docparser
 TEMPLATE = lib
 
 CONFIG += c++11 link_pkgconfig
-PKGCONFIG += poppler-cpp libzip pugixml
+PKGCONFIG += poppler-cpp libzip pugixml freetype2 libxml-2.0 uuid tinyxml2
 
 #安全编译参数
 QMAKE_CFLAGS += -fstack-protector-strong -D_FORTITY_SOURCE=1 -z noexecstack -pie -fPIC -z lazy
@@ -18,10 +18,12 @@ QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter
 include($$PWD/../3rdparty/3rdparty.pri)
 
 HEADERS += \
-    docparser.h
+    docparser.h \
+    ofd/ofd.h
 
 SOURCES += \
-    docparser.cpp
+    docparser.cpp \
+    ofd/ofd.cpp
 
 INCLUDEPATH += $$PWD/../3rdparty/libs
 
