@@ -38,14 +38,9 @@ static bool isTextSuffix(const std::string &suffix)
     };
     return isValidSuffix(validSuffixes, suffix);
 }
-
-std::string DocParser::convertFile(const std::string &filename)
+static std::string doConvertFile(const std::string &filename, const std::string &suffix)
 {
-    std::string content = "";
-    std::string suffix = filename.substr(filename.find_last_of('.') + 1);
-    if (suffix.empty())
-        return content;
-
+    std::string content;
     std::unique_ptr<fileext::FileExtension> document;
     try {
         // 比较后缀名，不区分大小写
@@ -85,4 +80,37 @@ std::string DocParser::convertFile(const std::string &filename)
 
     document.reset();
     return content;
+}
+
+std::string DocParser::convertFile(const std::string &filename)
+{
+    std::string suffix = filename.substr(filename.find_last_of('.') + 1);
+    if (suffix.empty())
+        return {};
+
+    // 已解析出内容，直接返回结果
+    const auto &content { doConvertFile(filename, suffix) };
+    if (!content.empty())
+        return content;
+
+    // 对于解析失败的情况，再进行相似后缀的尝试
+    // doc <-> docx
+    if (!strcasecmp(suffix.c_str(), "doc"))
+        return doConvertFile(filename, "docx");
+    if (!strcasecmp(suffix.c_str(), "docx"))
+        return doConvertFile(filename, "doc");
+
+    // xls <-> xlsx
+    if (!strcasecmp(suffix.c_str(), "xls"))
+        return doConvertFile(filename, "xlsx");
+    if (!strcasecmp(suffix.c_str(), "xlsx"))
+        return doConvertFile(filename, "xls");
+
+    // ppt <-> pptx
+    if (!strcasecmp(suffix.c_str(), "ppt"))
+        return doConvertFile(filename, "pptx");
+    if (!strcasecmp(suffix.c_str(), "pptx"))
+        return doConvertFile(filename, "ppt");
+
+    return {};
 }
