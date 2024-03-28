@@ -10,7 +10,7 @@ Build-Depends:
  libpoppler-cpp-dev,
  libzip-dev,
  libpugixml-dev,
- libfreetype6-dev,
+ libfreetype6-dev|libfreetype-dev,
  libxml2-dev,
  uuid-dev,
  libtinyxml2-dev
