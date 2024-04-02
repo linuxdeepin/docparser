@@ -1,7 +1,6 @@
 #include "ofd/Object.h"
 #include "ofd/Layer.h"
 #include "ofd/Page.h"
-#include "utils/logger.h"
 
 using namespace ofd;
 using namespace utils;

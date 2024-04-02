@@ -5,7 +5,6 @@
 #include <tinyxml2.h>
 using namespace tinyxml2;
 
-#include "logger.h"
 #include "utils.h"
 
 std::string GetChildElements(const XMLElement *element){

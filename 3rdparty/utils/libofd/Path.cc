@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <sstream>
+#include <algorithm>
+
 #include "ofd/Path.h"
-#include "utils/logger.h"
+
 #include "utils/utils.h"
 
 using namespace ofd;
@@ -316,7 +318,7 @@ PathPtr Path::FromPathData(const std::string &pathData){
                 idx += 2;
                 numTokens -= 2;
             } else {
-                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
+//                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
                 ok = false;
                 break;
             }
@@ -328,7 +330,7 @@ PathPtr Path::FromPathData(const std::string &pathData){
                 idx += 2;
                 numTokens -= 2;
             } else {
-                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
+//                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
                 ok = false;
                 break;
             }
@@ -342,7 +344,7 @@ PathPtr Path::FromPathData(const std::string &pathData){
                 idx += 4;
                 numTokens -= 4;
             } else {
-                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
+//                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
                 ok = false;
                 break;
             }
@@ -360,7 +362,7 @@ PathPtr Path::FromPathData(const std::string &pathData){
                 idx += 6;
                 numTokens -= 6;
             } else {
-                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
+//                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
                 ok = false;
                 break;
             }
@@ -377,7 +379,7 @@ PathPtr Path::FromPathData(const std::string &pathData){
                 idx += 7;
                 numTokens -= 7;
             } else {
-                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
+//                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
                 ok = false;
                 break;
             }
@@ -388,7 +390,7 @@ PathPtr Path::FromPathData(const std::string &pathData){
                 idx += 2;
                 numTokens -= 2;
             } else {
-                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
+//                LOG(WARNING) << "Not enough parameters in pathData tokens[" << idx << "]" << " pathData:" << pathData;
                 ok = false;
                 break;
             }

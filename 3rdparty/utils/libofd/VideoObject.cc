@@ -2,7 +2,7 @@
 #include "ofd/Page.h"
 #include "ofd/Document.h"
 
-#include "utils/logger.h"
+
 #include "utils/xml.h"
 
 using namespace utils;

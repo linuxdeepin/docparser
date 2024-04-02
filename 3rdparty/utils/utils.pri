@@ -18,7 +18,6 @@ SOURCES += \
     $$PWD/libofd/Signature.cc \
     $$PWD/libofd/TextObject.cc \
     $$PWD/libofd/VideoObject.cc \
-    $$PWD/libofd/utils/logger.cc \
     $$PWD/libofd/utils/StringFormatter.cc \
     $$PWD/libofd/utils/tinyxml2.cc \
     $$PWD/libofd/utils/unicode.cc \
@@ -47,8 +46,6 @@ HEADERS += \
     $$PWD/libofd/ofd/Signature.h \
     $$PWD/libofd/ofd/TextObject.h \
     $$PWD/libofd/ofd/VideoObject.h \
-    $$PWD/libofd/utils/easylogging++.h \
-    $$PWD/libofd/utils/logger.h \
     $$PWD/libofd/utils/StringFormatter.h \
     $$PWD/libofd/utils/tinyxml2.h \
     $$PWD/libofd/utils/unicode.h \

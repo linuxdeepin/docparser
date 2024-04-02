@@ -3,7 +3,6 @@
 #include "ofd/Page.h"
 #include "ofd/Document.h"
 #include "utils/xml.h"
-#include "utils/logger.h"
 #include "utils/utils.h"
 
 using namespace ofd;
@@ -223,7 +222,7 @@ bool Object::FromXML(XMLElementPtr objectElement){
     if ( ok ){
         FromElementsXML(objectElement);
     } else {
-        LOG(WARNING) << "FromAttributesXML() return false;";
+//        LOG(WARNING) << "FromAttributesXML() return false;";
     }
 
     return ok;
@@ -239,7 +238,7 @@ bool Object::FromAttributesXML(utils::XMLElementPtr objectElement){
     bool exist = false;
     std::tie(ID, exist) = objectElement->GetIntAttribute("ID");
     if ( !exist ){
-        LOG(ERROR) << "Attribute ID is required in Object XML."; 
+//        LOG(ERROR) << "Attribute ID is required in Object XML.";
         return false;
     }
 
@@ -250,7 +249,7 @@ bool Object::FromAttributesXML(utils::XMLElementPtr objectElement){
     //LOG(INFO) << "Boundary: " << strBoundary;
 
     if ( !exist ){
-        LOG(ERROR) << "Attribute ID is required in Object XML."; 
+//        LOG(ERROR) << "Attribute ID is required in Object XML.";
         return false;
     }
     std::vector<std::string> tokens = utils::SplitString(strBoundary);
@@ -273,7 +272,7 @@ bool Object::FromAttributesXML(utils::XMLElementPtr objectElement){
         Boundary.YMax = top + height;
         ok = true;
     } else {
-        LOG(ERROR) << "Box String tokens size >= 4 failed. boxString:" << strBoundary << " element name: " << objectElement->GetName();
+//        LOG(ERROR) << "Box String tokens size >= 4 failed. boxString:" << strBoundary << " element name: " << objectElement->GetName();
         return false;
     }
 
