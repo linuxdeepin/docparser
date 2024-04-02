@@ -6,7 +6,7 @@
 #include "ofd/Resource.h"
 #include "utils/xml.h"
 #include "utils/zip.h"
-#include "utils/logger.h"
+
 
 using namespace ofd;
 using namespace utils;
@@ -40,7 +40,7 @@ bool Package::Open(const std::string &filename)
 
     m_zip = std::make_shared<utils::Zip>();
     if (!m_zip->Open(m_filename, false)) {
-        LOG(ERROR) << "Error: Open " << m_filename << " failed.";
+//        LOG(ERROR) << "Error: Open " << m_filename << " failed.";
         return false;
     }
 
@@ -134,11 +134,11 @@ DocumentPtr Package::AddNewDocument()
 {
     size_t idx = m_documents.size();
     std::string docRoot = std::string("Doc_") + std::to_string(idx);
-    LOG(DEBUG) << "Calling OFDPackage::AddNewDocument(). docRoot: " << docRoot;
+//    LOG(DEBUG) << "Calling OFDPackage::AddNewDocument(). docRoot: " << docRoot;
 
     DocumentPtr document = Document::CreateNewDocument(GetSelf(), docRoot);
 
-    LOG(DEBUG) << "After create document.";
+//    LOG(DEBUG) << "After create document.";
     m_documents.push_back(document);
 
     return document;
@@ -207,7 +207,7 @@ bool Package::fromOFDXML(const std::string &strOFDXML)
             // Required.
             std::tie(Version, exist) = rootElement->GetStringAttribute("Version");
             if (!exist) {
-                LOG(ERROR) << "Attribute Version is Required in OFD.xsd";
+//                LOG(ERROR) << "Attribute Version is Required in OFD.xsd";
                 return false;
             }
 
@@ -215,7 +215,7 @@ bool Package::fromOFDXML(const std::string &strOFDXML)
             // Required.
             std::tie(DocType, exist) = rootElement->GetStringAttribute("DocType");
             if (!exist) {
-                LOG(ERROR) << "Attribute DocType is Required in OFD.xsd";
+//                LOG(ERROR) << "Attribute DocType is Required in OFD.xsd";
                 return false;
             }
 
@@ -234,7 +234,7 @@ bool Package::fromOFDXML(const std::string &strOFDXML)
 
                     std::string docRoot = document->GetDocRoot();
                     std::string docXMLFile = docRoot + "/Document.xml";
-                    LOG(INFO) << "Document xml:" << docXMLFile;
+//                    LOG(INFO) << "Document xml:" << docXMLFile;
 
                     std::string strDocumentXML;
                     std::tie(strDocumentXML, ok) = ReadZipFileString(docXMLFile);
@@ -246,10 +246,10 @@ bool Package::fromOFDXML(const std::string &strOFDXML)
             if (!hasDocBody) {
             }
         } else {
-            LOG(ERROR) << "Root element in OFD.xml is not named 'OFD'";
+//            LOG(ERROR) << "Root element in OFD.xml is not named 'OFD'";
         }
     } else {
-        LOG(ERROR) << "No root element in OFD.xml";
+//        LOG(ERROR) << "No root element in OFD.xml";
     }
 
     return ok;

@@ -5,7 +5,6 @@
 #include "ofd/Resource.h"
 #include "utils/xml.h"
 #include "utils/uuid.h"
-#include "utils/logger.h"
 
 using namespace ofd;
 using namespace utils;
@@ -53,7 +52,7 @@ bool Document::Open(){
         std::string strResXML;
         std::tie(strResXML, std::ignore) = m_package.lock()->ReadZipFileString(m_docBody.DocRoot + "/" + m_commonData.PublicRes->GetResDescFile());
         if ( !m_commonData.PublicRes->FromResXML(strResXML) ){
-            LOG(ERROR) << "m_commonData.PublicRes.FromResXML() failed.";
+//            LOG(ERROR) << "m_commonData.PublicRes.FromResXML() failed.";
             return false;
         }
     }
@@ -62,7 +61,7 @@ bool Document::Open(){
         std::string strResXML;
         std::tie(strResXML, std::ignore) = m_package.lock()->ReadZipFileString(m_docBody.DocRoot + "/" + m_commonData.DocumentRes->GetResDescFile());
         if ( !m_commonData.DocumentRes->FromResXML(strResXML) ){
-            LOG(ERROR) << "m_commonData.DocumentRes.FromResXML() failed.";
+//            LOG(ERROR) << "m_commonData.DocumentRes.FromResXML() failed.";
             return false;
         } else {
             m_commonData.DocumentRes->LoadFonts();
@@ -359,7 +358,7 @@ bool Document::FromDocBodyXML(XMLElementPtr docBodyElement){
         } else if ( childName == "DocRoot" ){
             std::string docRoot;
             std::tie(docRoot, std::ignore) = childElement->GetStringValue();
-            LOG(DEBUG) << "DocRoot: " << docRoot;
+//            LOG(DEBUG) << "DocRoot: " << docRoot;
 
         // TODO
         // -------- <Versions>
@@ -377,7 +376,7 @@ bool Document::FromDocBodyXML(XMLElementPtr docBodyElement){
     }
 
     if ( !hasDocInfo ){
-        LOG(ERROR) << "No DocInfo element in DocBody.";
+//        LOG(ERROR) << "No DocInfo element in DocBody.";
     }
 
     //if ( reader.EnterChildElement("DocBody") ){
@@ -390,7 +389,7 @@ bool Document::FromDocBodyXML(XMLElementPtr docBodyElement){
             //} else if ( reader.CheckElement("DocRoot") ){
                 //std::string content;
                 //reader.ReadElement(content);
-                //LOG(DEBUG) << "DocRoot: " << content;
+//                LOG(DEBUG) << "DocRoot: " << content;
 
             //// -------- <Versions>
             //} else if ( reader.CheckElement("Versions") ){
@@ -422,13 +421,13 @@ bool Document::fromDocInfoXML(XMLElementPtr docInfoElement){
         // Optional.
         if ( childName == "DocID" ){
             std::tie(docInfo.DocID, std::ignore) = childElement->GetStringValue();
-            LOG(DEBUG) << "DocID: " << docInfo.DocID;
+//            LOG(DEBUG) << "DocID: " << docInfo.DocID;
 
         // -------- <Title>
         // Optional.
         } else if ( childName == "Title" ){
             std::tie(docInfo.Title, std::ignore) = childElement->GetStringValue();
-            LOG(DEBUG) << "Title: " << docInfo.Title;
+//            LOG(DEBUG) << "Title: " << docInfo.Title;
 
         // -------- <Author>
         // Optional.
@@ -624,10 +623,10 @@ bool Document::FromDocumentXML(const std::string &strDocumentXML){
                 childElement = childElement->GetNextSiblingElement();
             }
         } else {
-            LOG(ERROR) << "Root element in Document Content.xml is not named 'Document'";
+//            LOG(ERROR) << "Root element in Document Content.xml is not named 'Document'";
         }
     } else {
-        LOG(ERROR) << "No root element in Document Content.xml";
+//        LOG(ERROR) << "No root element in Document Content.xml";
     }
 
     return ok;
@@ -657,7 +656,7 @@ bool Document::fromCommonDataXML(XMLElementPtr commonDataElement){
             // OFD (section 7.5) P11. Definitions.xsd
             // Required.
             std::tie(m_commonData.PageArea, ok) = fromPageAreaXML(childElement);
-            LOG(DEBUG) << "CommonData.PageArea = " << m_commonData.PageArea.to_string();
+//            LOG(DEBUG) << "CommonData.PageArea = " << m_commonData.PageArea.to_string();
 
         } else if ( childName == "PublicRes" ){
             // -------- <PublicRes>
@@ -719,18 +718,18 @@ bool Document::fromPagesXML(XMLElementPtr pagesElement){
             bool exist = false;
             std::tie(pageID, exist) = childElement->GetIntAttribute("ID");
             if ( !exist ){
-                LOG(ERROR) << "Attribute ID is required in Document.xsd";
+//                LOG(ERROR) << "Attribute ID is required in Document.xsd";
                 return false;
             }
 
             std::string baseLoc;
             std::tie(baseLoc, exist) = childElement->GetStringAttribute("BaseLoc");
             if ( !exist ){
-                LOG(ERROR) << "Attribute BaseLoc is required in Document.xsd";
+//                LOG(ERROR) << "Attribute BaseLoc is required in Document.xsd";
                 return false;
             }
 
-            LOG(DEBUG) << "PageID: " << pageID << " BaseLoc: " << baseLoc;
+//            LOG(DEBUG) << "PageID: " << pageID << " BaseLoc: " << baseLoc;
 
             PagePtr page = AddNewPage();
             page->ID = pageID;

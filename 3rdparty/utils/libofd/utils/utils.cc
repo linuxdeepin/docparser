@@ -5,7 +5,6 @@
 #include <iostream>
 #include <fstream>
 #include "utils.h"
-#include "logger.h"
 
 namespace utils{
 
@@ -32,7 +31,7 @@ namespace utils{
 
         ifile.seekg(0, std::ios::end);
         fontDataSize = ifile.tellg();
-        LOG(INFO) << "filename: " << filename << " len: " << fontDataSize;
+//        LOG(INFO) << "filename: " << filename << " len: " << fontDataSize;
 
         fontData = new char[fontDataSize];
         ifile.seekg(0, std::ios::beg);

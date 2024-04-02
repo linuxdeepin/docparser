@@ -6,7 +6,7 @@
 #include "ofd/Color.h"
 #include "ofd/Resource.h"
 #include "utils/xml.h"
-#include "utils/logger.h"
+
 
 using namespace ofd;
 
@@ -60,7 +60,7 @@ void TextObject::GenerateAttributesXML(utils::XMLWriter &writer) const
     // -------- <TextObject Font="">
     // Required.
 
-    LOG(WARNING) << "Attribute Font is required in TextObject XML.";
+//    LOG(WARNING) << "Attribute Font is required in TextObject XML.";
 
     // -------- <TextObject Size="">
     // Required.
@@ -166,7 +166,7 @@ bool TextObject::FromAttributesXML(utils::XMLElementPtr objectElement)
     bool exist = false;
     std::tie(fontID, exist) = objectElement->GetIntAttribute("Font");
     if (!exist) {
-        LOG(ERROR) << "Attribute Font is required in TextObject XML.";
+//        LOG(ERROR) << "Attribute Font is required in TextObject XML.";
         return false;
     } else {
         const ResourcePtr documentRes = GetDocumentRes();
@@ -177,7 +177,7 @@ bool TextObject::FromAttributesXML(utils::XMLElementPtr objectElement)
     // Required.
     std::tie(FontSize, exist) = objectElement->GetIntAttribute("Size");
     if (!exist) {
-        LOG(ERROR) << "Attribute Size is required in TextObject XML.";
+//        LOG(ERROR) << "Attribute Size is required in TextObject XML.";
         return false;
     }
 
@@ -203,13 +203,13 @@ bool TextObject::IterateElementsXML(utils::XMLElementPtr childElement)
         bool exist = false;
         std::tie(textCode.X, exist) = childElement->GetFloatAttribute("X");
         if (!exist) {
-            LOG(ERROR) << "Attribute X is required in TextCode XML";
+//            LOG(ERROR) << "Attribute X is required in TextCode XML";
             return false;
         }
 
         std::tie(textCode.Y, exist) = childElement->GetFloatAttribute("Y");
         if (!exist) {
-            LOG(ERROR) << "Attribute Y is required in TextCode XML";
+//            LOG(ERROR) << "Attribute Y is required in TextCode XML";
             return false;
         }
 
@@ -221,7 +221,7 @@ bool TextObject::IterateElementsXML(utils::XMLElementPtr childElement)
 
         std::tie(textCode.Text, std::ignore) = childElement->GetStringValue();
 
-        //LOG(DEBUG) << "X: " << textCode.X << " Y: " << textCode.Y << " Text: " << textCode.Text;
+//        LOG(DEBUG) << "X: " << textCode.X << " Y: " << textCode.Y << " Text: " << textCode.Text;
         m_textCodes.push_back(textCode);
 
         ok = true;
@@ -238,7 +238,7 @@ bool TextObject::IterateElementsXML(utils::XMLElementPtr childElement)
         std::tie(strokeColor, exist) = Color::ReadColorXML(childElement);
         if (exist) {
             StrokeColor = strokeColor;
-            LOG(DEBUG) << "Readed stroke color = (" << strokeColor->Value.RGB.Red << "," << strokeColor->Value.RGB.Green << "," << strokeColor->Value.RGB.Blue << ")";
+//            LOG(DEBUG) << "Readed stroke color = (" << strokeColor->Value.RGB.Red << "," << strokeColor->Value.RGB.Green << "," << strokeColor->Value.RGB.Blue << ")";
         }
     }
 

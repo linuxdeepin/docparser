@@ -6,7 +6,7 @@
 #include "ofd/Package.h"
 #include "ofd/Page.h"
 #include "utils/xml.h"
-#include "utils/logger.h"
+
 
 using namespace ofd;
 
@@ -143,7 +143,7 @@ Resource::ImplCls::ImplCls(Resource *resource, PackagePtr package, DocumentPtr d
                 m_resDescFile = "PublicRes.xml";
             }
         } else {
-            LOG(ERROR) << "m_package == nullptr in Resource.";
+//            LOG(ERROR) << "m_package == nullptr in Resource.";
         }
     }
 }
@@ -311,7 +311,7 @@ bool Resource::ImplCls::FromResXML(const std::string &strResXML)
             bool exist = false;
             std::tie(m_baseLoc, exist) = rootElement->GetStringAttribute("BaseLoc");
             if (!exist) {
-                LOG(ERROR) << "BaseLoc attribute is required in Res.xsd";
+//                LOG(ERROR) << "BaseLoc attribute is required in Res.xsd";
                 return false;
             }
 
