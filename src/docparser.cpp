@@ -32,9 +32,9 @@ static bool isValidSuffix(const std::unordered_set<std::string> &supportedSuffix
 static bool isTextSuffix(const std::string &suffix)
 {
     static const std::unordered_set<std::string> validSuffixes = {
-        "txt", "text", "md", "markdown", "sh", "html",
-        "xml", "xhtml", "json", "css", "yaml", "ini",
-        "bat", "js", "sql", "uof"
+        "txt", "text", "md", "markdown", "sh", "html", "htm",
+        "xml", "xhtml", "dhtml", "shtm", "shtml", "json",
+        "css", "yaml", "ini", "bat", "js", "sql", "uof"
     };
     return isValidSuffix(validSuffixes, suffix);
 }
