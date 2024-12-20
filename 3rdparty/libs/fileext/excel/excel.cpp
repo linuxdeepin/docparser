@@ -7,6 +7,7 @@
  * @date      02.12.2016 -- 28.01.2018
  */
 #include <fstream>
+#include <string.h>
 #include <pugixml.hpp>
 
 #include "tools.hpp"
@@ -57,7 +58,7 @@ Excel::Excel(const std::string& fileName, const std::string& extension)
 int Excel::convert(bool addStyle, bool extractImages, char mergingMode) {
 	// Convert file
     Book* book = new Book(m_fileName, m_text, false);
-    if (m_extension == "xlsx") {
+    if (!strcasecmp(m_extension.c_str(), "xlsx")) {
 		Xlsx xlsx(book);
 		xlsx.openWorkbookXlsx();
     } else {
