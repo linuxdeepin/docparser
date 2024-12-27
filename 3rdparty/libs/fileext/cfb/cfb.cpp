@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "encoding/encoding.cpp"
+#include "encoding/encoding.hpp"
 #include "tools.hpp"
 
 #include "cfb.hpp"

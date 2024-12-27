@@ -66,7 +66,7 @@ namespace ofd{
             uint64_t GetRefID() const {return m_refID;};
             void SetRefID(uint64_t refID){m_refID = refID;};
         private:
-            uint64_t              m_refID; // 资源引用ID。缺省值0，指向文档设定的颜色空间。 
+            uint64_t              m_refID; // 资源引用ID。缺省值0，指向文档设定的颜色空间。
 
     }; // class ColorSpace
 
@@ -78,7 +78,7 @@ namespace ofd{
         ColorRGB() : Red(0), Green(0), Blue(0){
         }
         ColorRGB(uint32_t r, uint32_t g, uint32_t b):
-            Red(r), Green(g), Blue(b){ 
+            Red(r), Green(g), Blue(b){
         }
 
         std::tuple<double, double, double> GetRGB() const{
@@ -217,7 +217,7 @@ namespace ofd{
                                              // 取出相应索引的预定义颜色用来绘制。索引从0开始。
             uint32_t         Alpha;          // 颜色透明度，在0-255之间取值。默认值为255，表示完全不透明。
 
-            // TODO 
+            // TODO
             // Pattern;      // 底纹 标准 P34 页，Page.xsd。
             // AxialShd;     // 轴向渐变 标准 P36 页，Page.xsd。
             // RadialShd;    // 径向渐变 标准 P40 页，Page.xsd。
@@ -243,12 +243,12 @@ namespace ofd{
             bool                  m_bUsePalette; // 使用颜色空间调色板标志
 
     }; // class Color
-    #define COLOR_BLACK ofd::Color::Instance(0,0,0) 
-    #define COLOR_WHITE ofd::Color::Instance(255,255,255) 
+    #define COLOR_BLACK ofd::Color::Instance(0,0,0)
+    #define COLOR_WHITE ofd::Color::Instance(255,255,255)
     #define COLOR_TRANSPARENT ofd::Color::Instance(0,0,0,nullptr, 0)
-    #define COLOR_RED ofd::Color::Instance(255,0,0) 
-    #define COLOR_GREEN ofd::Color::Instance(0,255,0) 
-    #define COLOR_BLUE ofd::Color::Instance(0,0,255) 
+    #define COLOR_RED ofd::Color::Instance(255,0,0)
+    #define COLOR_GREEN ofd::Color::Instance(0,255,0)
+    #define COLOR_BLUE ofd::Color::Instance(0,0,255)
 
     // ======== struct ColorStop_t ========
     typedef struct _ColorStop {
@@ -256,7 +256,7 @@ namespace ofd{
         ColorPtr Color;
         double Offset;
 
-        _ColorStop(ColorPtr color, double offset) : 
+        _ColorStop(ColorPtr color, double offset) :
             Color(color), Offset(offset){
             }
 
