@@ -9,8 +9,19 @@ pkgdesc='A document parser library ported from document2html'
 arch=('x86_64' 'aarch64')
 url="https://github.com/linuxdeepin/docparser"
 license=('GPL3')
-depends=('poppler' 'libzip' 'pugixml' 'tinyxml2')
-makedepends=('qt5-tools')
+depends=(
+    'poppler'
+    'libzip'
+    'pugixml'
+    'freetype2'
+    'libxml2'
+    'util-linux-libs'  # for uuid
+    'tinyxml2'
+)
+makedepends=(
+    'cmake'
+    'pkg-config'
+)
 conflicts=('docparser')
 provides=('docparser')
 groups=('deepin-git')
@@ -19,12 +30,14 @@ source=("${sourcetars[@]}")
 b2sums=('SKIP')
 
 build() {
-  cd $sourcedir
-  qmake-qt5 PREFIX=/usr
-  make
+    cd $sourcedir
+    cmake -B build \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=None
+    cmake --build build
 }
 
 package() {
-  cd $sourcedir
-  make INSTALL_ROOT="$pkgdir" install
+    cd $sourcedir
+    DESTDIR="$pkgdir" cmake --install build
 }
