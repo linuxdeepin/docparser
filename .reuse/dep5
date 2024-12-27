@@ -9,7 +9,7 @@ Copyright: None
 License: CC0-1.0
 
 # Project file
-Files: *.pro *.pri
+Files: *CMakeLists.txt *.pc.in
 Copyright: None
 License: CC0-1.0
 

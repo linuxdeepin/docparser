@@ -1,3 +1,11 @@
+docparser (1.0.13) unstable; urgency=medium
+
+  * Remove Qt
+  * Use CMake
+  * Use C++17
+
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Fri, 27 Dec 2024 14:06:31 +0800
+
 docparser (1.0.12) unstable; urgency=medium
 
   * update to 1.0.12
