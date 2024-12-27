@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.16)
 project(docparser VERSION 1.0.0 LANGUAGES CXX)
 
 # 设置C++标准
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 在顶层CMakeLists.txt中添加

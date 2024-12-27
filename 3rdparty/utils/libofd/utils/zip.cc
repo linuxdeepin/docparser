@@ -177,7 +177,7 @@ bool Zip::ImplCls::AddDir(const std::string &dirName) {
 // **************** class Zip ****************
 
 Zip::Zip(){
-    m_impl = make_unique<Zip::ImplCls>(this);
+    m_impl = std::make_unique<Zip::ImplCls>(this);
 }
 
 Zip::~Zip(){
