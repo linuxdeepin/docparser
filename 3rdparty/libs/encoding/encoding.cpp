@@ -5,7 +5,6 @@
  * @author  dmryutov (dmryutov@gmail.com)
  * @date    22.08.2017 -- 29.10.2017
  */
-#pragma once
 #include <codecvt>
 #include <iostream>
 #include <sstream>
