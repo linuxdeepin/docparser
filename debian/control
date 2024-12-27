@@ -5,8 +5,6 @@ Maintainer: deepin <packages@deepin.com>
 Build-Depends:
  cmake,
  debhelper (>= 11),
- qtbase5-dev,
- qt5-qmake,
  pkg-config,
  libpoppler-cpp-dev,
  libzip-dev,
