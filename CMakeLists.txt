@@ -5,12 +5,8 @@ project(docparser VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 在顶层CMakeLists.txt中添加
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
-
 # 安全编译选项
-add_compile_options(-fstack-protector-strong -D_FORTITY_SOURCE=1 -fvisibility=hidden)
+add_compile_options(-fstack-protector-strong -D_FORTITY_SOURCE=1)
 add_link_options(-z noexecstack -pie -fPIC)
 
 # 设置安装路径
