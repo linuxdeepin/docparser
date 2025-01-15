@@ -38,6 +38,12 @@ add_library(docparser SHARED
     ${SRC_FILES}
 )
 
+# 设置库的版本信息
+set_target_properties(docparser PROPERTIES
+    VERSION 1.0
+    SOVERSION 1
+)
+
 # 设置目标属性
 target_include_directories(docparser
     PUBLIC
