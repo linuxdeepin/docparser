@@ -97,54 +97,62 @@ static std::unique_ptr<fileext::FileExtension> createOfd(const std::string &file
     return std::make_unique<ofd::Ofd>(filename);
 }
 
-// 缓存后缀到创建函数的映射
-static const std::unordered_map<std::string, FileCreator> extensionMap = {
-    { "docx", createDocx },
-    { "pptx", createPptx },
-    { "ppsx", createPptx },
-    { "doc", createDoc },
-    { "dot", createDoc },
-    { "wps", createDoc },
-    { "rtf", createRtf },
-    { "odg", createOdf },
-    { "odt", createOdf },
-    { "ods", createOdf },
-    { "odp", createOdf },
-    { "xls", createExcel },
-    { "xlsx", createExcel },
-    { "xlsb", createXlsb },
-    { "ppt", createPpt },
-    { "pps", createPpt },
-    { "dps", createPpt },
-    { "pot", createPpt },
-    { "pdf", createPdf },
-    { "ofd", createOfd }
-};
+// Caching the mapping of extensions to creation functions
+static const std::unordered_map<std::string, FileCreator> createExtensionMap()
+{
+    return {
+        { "docx", createDocx },
+        { "pptx", createPptx },
+        { "ppsx", createPptx },
+        { "doc", createDoc },
+        { "dot", createDoc },
+        { "wps", createDoc },
+        { "rtf", createRtf },
+        { "odg", createOdf },
+        { "odt", createOdf },
+        { "ods", createOdf },
+        { "odp", createOdf },
+        { "xls", createExcel },
+        { "xlsx", createExcel },
+        { "xlsb", createXlsb },
+        { "ppt", createPpt },
+        { "pps", createPpt },
+        { "dps", createPpt },
+        { "pot", createPpt },
+        { "pdf", createPdf },
+        { "ofd", createOfd }
+    };
+}
 
-// 缓存相似后缀的映射关系
-static const std::unordered_map<std::string, std::string> similarExtensionMap = {
-    { "doc", "docx" },
-    { "docx", "doc" },
-    { "xls", "xlsx" },
-    { "xlsx", "xls" },
-    { "ppt", "pptx" },
-    { "pptx", "ppt" }
-};
+static const std::unordered_map<std::string, std::string> createSimilarExtensionMap()
+{
+    return {
+        { "doc", "docx" },
+        { "docx", "doc" },
+        { "xls", "xlsx" },
+        { "xlsx", "xls" },
+        { "ppt", "pptx" },
+        { "pptx", "ppt" }
+    };
+}
 
 static std::string doConvertFile(const std::string &filename, std::string suffix)
 {
-    // 转换后缀为小写
+    static const std::unordered_map<std::string, FileCreator> extensionMap = createExtensionMap();
+    static const std::unordered_map<std::string, std::string> similarExtensionMap = createSimilarExtensionMap();
+
+    // Convert suffix to lowercase
     std::transform(suffix.begin(), suffix.end(), suffix.begin(),
                    [](unsigned char c) { return std::tolower(c); });
 
     std::unique_ptr<fileext::FileExtension> document;
 
     try {
-        // 先检查是否是文本文件
+        // First check if it is a text file
         if (isTextSuffix(suffix)) {
             document = createTxt(filename, suffix);
         } else {
-            // 查找对应的创建函数
+            // Find the corresponding creation function
             auto it = extensionMap.find(suffix);
             if (it != extensionMap.end()) {
                 document = it->second(filename, suffix);
@@ -154,7 +162,7 @@ static std::string doConvertFile(const std::string &filename, std::string suffix
         }
 
         document->convert();
-        // 使用移动语义避免复制
+        // Use move semantics to avoid copying
         return std::move(document->m_text);
     } catch (const std::logic_error &error) {
         std::cout << error.what() << std::endl;
@@ -182,6 +190,9 @@ std::string DocParser::convertFile(const std::string &filename)
         return content;
 
     // 尝试相似后缀
+    static const std::unordered_map<std::string, FileCreator> extensionMap = createExtensionMap();
+    static const std::unordered_map<std::string, std::string> similarExtensionMap = createSimilarExtensionMap();
+
     auto it = similarExtensionMap.find(suffix);
     if (it != similarExtensionMap.end()) {
         return doConvertFile(filename, it->second);
