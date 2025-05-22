@@ -1,3 +1,9 @@
+docparser (1.0.18) unstable; urgency=medium
+
+  * refactor
+
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Thu, 22 May 2025 08:28:35 +0800
+
 docparser (1.0.17) unstable; urgency=medium
 
   * add tests
