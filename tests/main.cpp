@@ -3,12 +3,15 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "docparser.h"
+
 #include <QCoreApplication>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 #include <QFileInfo>
 #include <QDebug>
 #include <QTextStream>
+#include <QMimeDatabase>
+
 #include <DTextEncoding>
 
 int main(int argc, char **argv)
@@ -49,7 +52,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto fromEncoding = Dtk::Core::DTextEncoding::detectFileEncoding(filePath);
+    QMimeDatabase mimeDatabase;
+    QMimeType mimeType = mimeDatabase.mimeTypeForFile(filePath);
+    QString mimeTypeName = mimeType.name();
+    QByteArray fromEncoding = "utf-8";
+    if (mimeTypeName.startsWith("text/"))
+        fromEncoding = Dtk::Core::DTextEncoding::detectFileEncoding(filePath);
     // Print file information
     qInfo() << "Parsing file:" << filePath << "From encoding: " << fromEncoding;
 
