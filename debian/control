@@ -12,7 +12,8 @@ Build-Depends:
  libfreetype6-dev|libfreetype-dev,
  libxml2-dev,
  uuid-dev,
- libtinyxml2-dev
+ libtinyxml2-dev,
+ libmagic-dev
 Standards-Version: 4.3.0
 
 Package: libdocparser
