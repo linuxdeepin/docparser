@@ -22,6 +22,7 @@ pkg_check_modules(DEPS REQUIRED
     libxml-2.0
     uuid
     tinyxml2
+    libmagic
 )
 
 # 添加子目录

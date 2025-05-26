@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <string_view>
 #include <algorithm>
+#include <magic.h>
 
 static bool isTextSuffix(std::string_view suffix)
 {
@@ -37,6 +38,65 @@ static bool isTextSuffix(std::string_view suffix)
                    [](unsigned char c) { return std::tolower(c); });
 
     return validSuffixes.count(lowercaseSuffix) > 0;
+}
+
+/**
+ * @brief Check if a file is a text file using libmagic MIME type detection
+ * @param filename The path to the file to check
+ * @return true if the file is detected as text, false otherwise
+ */
+static bool isTextFileByMimeType(const std::string &filename)
+{
+    magic_t magic_cookie = magic_open(MAGIC_MIME_TYPE);
+    if (magic_cookie == nullptr) {
+        std::cerr << "ERROR: [isTextFileByMimeType] Failed to initialize libmagic" << std::endl;
+        return false;
+    }
+
+    if (magic_load(magic_cookie, nullptr) != 0) {
+        std::cerr << "ERROR: [isTextFileByMimeType] Failed to load magic database: "
+                  << magic_error(magic_cookie) << std::endl;
+        magic_close(magic_cookie);
+        return false;
+    }
+
+    const char *mime_type = magic_file(magic_cookie, filename.c_str());
+    if (mime_type == nullptr) {
+        std::cerr << "ERROR: [isTextFileByMimeType] Failed to detect MIME type for "
+                  << filename << ": " << magic_error(magic_cookie) << std::endl;
+        magic_close(magic_cookie);
+        return false;
+    }
+
+    std::string mimeStr(mime_type);
+    magic_close(magic_cookie);
+
+    std::cout << "INFO: [isTextFileByMimeType] Detected MIME type: " << mimeStr
+              << " for file: " << filename << std::endl;
+
+    // Check if MIME type starts with "text/"
+    bool isText = mimeStr.substr(0, 5) == "text/";
+
+    // Also consider some application types that are actually text
+    if (!isText) {
+        static const std::unordered_set<std::string> textApplicationTypes = {
+            "application/json",
+            "application/xml",
+            "application/javascript",
+            "application/x-sh",
+            "application/x-shellscript",
+            "application/x-perl",
+            "application/x-python",
+            "application/x-ruby",
+            "application/x-awk",
+            "application/x-desktop",
+            "application/x-yaml"
+        };
+
+        isText = textApplicationTypes.count(mimeStr) > 0;
+    }
+
+    return isText;
 }
 
 // 预处理后缀映射，避免多次strcasecmp比较
@@ -157,7 +217,17 @@ static std::string doConvertFile(const std::string &filename, std::string suffix
             if (it != extensionMap.end()) {
                 document = it->second(filename, suffix);
             } else {
-                throw std::logic_error("Unsupported file extension: " + filename);
+                // Extension not found in map, check if it's a text file by content
+                std::cout << "INFO: [doConvertFile] Unknown file extension '" << suffix
+                          << "', checking file content for text type: " << filename << std::endl;
+
+                if (isTextFileByMimeType(filename)) {
+                    std::cout << "INFO: [doConvertFile] File detected as text by MIME type analysis: "
+                              << filename << std::endl;
+                    document = createTxt(filename, suffix);
+                } else {
+                    throw std::logic_error("Unsupported file extension: " + filename);
+                }
             }
         }
 
