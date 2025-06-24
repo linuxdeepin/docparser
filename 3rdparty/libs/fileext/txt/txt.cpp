@@ -19,10 +19,15 @@ int Txt::convert(bool addStyle, bool extractImages, char mergingMode)
 {
     std::string line;
     std::ifstream inputFile(m_fileName);
-    while (getline(inputFile, line))
-        m_text += line + '\n';
+    
+    while (getline(inputFile, line)) {
+        if (!safeAppendText(line + '\n')) {
+            // Truncation occurred, stop processing
+            break;
+        }
+    }
+    
     inputFile.close();
-
     return 0;
 }
 

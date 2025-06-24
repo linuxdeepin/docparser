@@ -136,17 +136,23 @@ void Ppt::parseRecord(const std::string &ppd, size_t &offset, int recType, ulong
             auto u = readByte<unsigned short>(ppd, offset, 2);
             offset += 2;
             if (u == 0x0D || u == 0x0B) {
-                m_text += '\n';
+                if (!safeAppendText("\n")) {
+                    return;
+                }
             } else {
                 if (utf16_unichar_has_4_bytes(u) && ++i < textLen) {
                     auto b = readByte<unsigned short>(ppd, offset, 2);
                     offset += 2;
                     u = (u << 16 | b);
                 }
-                m_text += unichar_to_utf8(u);
+                if (!safeAppendText(unichar_to_utf8(u))) {
+                    return;
+                }
             }
         }
-        m_text += '\n';
+        if (!safeAppendText("\n")) {
+            return;
+        }
         break;
     }
     case RT_TEXT_BYTES_ATOM: {
@@ -157,12 +163,19 @@ void Ppt::parseRecord(const std::string &ppd, size_t &offset, int recType, ulong
         for (int i = 0; i < textLen; ++i) {
             auto u = readByte<unsigned short>(ppd, offset, 1);
             ++offset;
-            if (u == 0x0B || u == 0x0D)
-                m_text += '\n';
-            else
-                m_text += unichar_to_utf8(u);
+            if (u == 0x0B || u == 0x0D) {
+                if (!safeAppendText("\n")) {
+                    return;
+                }
+            } else {
+                if (!safeAppendText(unichar_to_utf8(u))) {
+                    return;
+                }
+            }
         }
-        m_text += '\n';
+        if (!safeAppendText("\n")) {
+            return;
+        }
         break;
     }
     case OFFICE_ART_SP_CONTAINER:

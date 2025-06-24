@@ -137,10 +137,18 @@ int Doc::convert(bool addStyle, bool extractImages, char mergingMode) {
 
     // Separate pargraphs and add them to HTML tags
     for (const auto& line : tools::explode(text, "\n\r")) {
+        if (shouldStopProcessing()) {
+            break;
+        }
+        
         if (line.empty()) {
-            m_text += "\u00A0";
+            if (!safeAppendText("\u00A0")) {
+                break;
+            }
         } else {
-            m_text += line + '\n';
+            if (!safeAppendText(line + '\n')) {
+                break;
+            }
         }
     }
     return 0;

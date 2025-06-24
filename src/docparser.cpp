@@ -24,6 +24,7 @@
 #include <string_view>
 #include <algorithm>
 #include <magic.h>
+#include <sys/stat.h>
 
 static bool isTextSuffix(std::string_view suffix)
 {
@@ -38,6 +39,24 @@ static bool isTextSuffix(std::string_view suffix)
                    [](unsigned char c) { return std::tolower(c); });
 
     return validSuffixes.count(lowercaseSuffix) > 0;
+}
+
+/**
+ * @brief Extract and normalize file extension
+ * @param filename Path to the file
+ * @return Lowercase file extension, or empty string if no extension
+ */
+static std::string extractFileExtension(const std::string &filename)
+{
+    size_t dotPos = filename.find_last_of('.');
+    if (dotPos == std::string::npos || dotPos == filename.length() - 1) {
+        return {};
+    }
+
+    std::string suffix = filename.substr(dotPos + 1);
+    std::transform(suffix.begin(), suffix.end(), suffix.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return suffix;
 }
 
 /**
@@ -97,6 +116,33 @@ static bool isTextFileByMimeType(const std::string &filename)
     }
 
     return isText;
+}
+
+/**
+ * @brief Get file size in bytes
+ * @param filename Path to the file
+ * @return File size in bytes, or 0 if file doesn't exist or error occurred
+ */
+static size_t getFileSize(const std::string &filename)
+{
+    struct stat stat_buf;
+    if (stat(filename.c_str(), &stat_buf) == 0) {
+        return static_cast<size_t>(stat_buf.st_size);
+    }
+    return 0;
+}
+
+/**
+ * @brief Check if a file is small enough to use the original processing path
+ * @param filename Path to the file
+ * @param maxBytes Maximum bytes limit
+ * @return true if file is small enough that doesn't need truncation
+ */
+static bool isSmallFile(const std::string &filename, size_t maxBytes)
+{
+    // Check file size first (early exit if too large)
+    size_t fileSize = getFileSize(filename);
+    return fileSize > 0 && fileSize <= maxBytes;
 }
 
 // 预处理后缀映射，避免多次strcasecmp比较
@@ -196,41 +242,52 @@ static const std::unordered_map<std::string, std::string> createSimilarExtension
     };
 }
 
-static std::string doConvertFile(const std::string &filename, std::string suffix)
+/**
+ * @brief Create parser instance for the given file
+ * @param filename Path to the file
+ * @param suffix File extension (lowercase)
+ * @return Unique pointer to FileExtension instance, or nullptr if unsupported
+ */
+static std::unique_ptr<fileext::FileExtension> createParser(const std::string &filename, const std::string &suffix)
 {
     static const std::unordered_map<std::string, FileCreator> extensionMap = createExtensionMap();
-    static const std::unordered_map<std::string, std::string> similarExtensionMap = createSimilarExtensionMap();
 
+    // First check if it is a text file
+    if (isTextSuffix(suffix)) {
+        return createTxt(filename, suffix);
+    }
+
+    // Find the corresponding creation function
+    auto it = extensionMap.find(suffix);
+    if (it != extensionMap.end()) {
+        return it->second(filename, suffix);
+    }
+
+    // Extension not found in map, check if it's a text file by content
+    std::cout << "INFO: [createParser] Unknown file extension '" << suffix
+              << "', checking file content for text type: " << filename << std::endl;
+
+    if (isTextFileByMimeType(filename)) {
+        std::cout << "INFO: [createParser] File detected as text by MIME type analysis: "
+                  << filename << std::endl;
+        return createTxt(filename, suffix);
+    }
+
+    return nullptr;
+}
+
+static std::string doConvertFile(const std::string &filename, std::string suffix)
+{
     // Convert suffix to lowercase
     std::transform(suffix.begin(), suffix.end(), suffix.begin(),
                    [](unsigned char c) { return std::tolower(c); });
 
-    std::unique_ptr<fileext::FileExtension> document;
+    std::unique_ptr<fileext::FileExtension> document = createParser(filename, suffix);
+    if (!document) {
+        throw std::logic_error("Unsupported file extension: " + filename);
+    }
 
     try {
-        // First check if it is a text file
-        if (isTextSuffix(suffix)) {
-            document = createTxt(filename, suffix);
-        } else {
-            // Find the corresponding creation function
-            auto it = extensionMap.find(suffix);
-            if (it != extensionMap.end()) {
-                document = it->second(filename, suffix);
-            } else {
-                // Extension not found in map, check if it's a text file by content
-                std::cout << "INFO: [doConvertFile] Unknown file extension '" << suffix
-                          << "', checking file content for text type: " << filename << std::endl;
-
-                if (isTextFileByMimeType(filename)) {
-                    std::cout << "INFO: [doConvertFile] File detected as text by MIME type analysis: "
-                              << filename << std::endl;
-                    document = createTxt(filename, suffix);
-                } else {
-                    throw std::logic_error("Unsupported file extension: " + filename);
-                }
-            }
-        }
-
         document->convert();
         // Use move semantics to avoid copying
         return std::move(document->m_text);
@@ -243,16 +300,70 @@ static std::string doConvertFile(const std::string &filename, std::string suffix
     return {};
 }
 
+/**
+ * @brief Convert file with truncation support
+ * @param filename Path to the file
+ * @param maxBytes Maximum bytes to process
+ * @return Converted text content (potentially truncated)
+ */
+static std::string doConvertFileWithTruncation(const std::string &filename, size_t maxBytes)
+{
+    std::string suffix = extractFileExtension(filename);
+    if (suffix.empty()) {
+        return {};
+    }
+
+    std::unique_ptr<fileext::FileExtension> document = createParser(filename, suffix);
+    if (!document) {
+        // Try similar extensions
+        static const std::unordered_map<std::string, std::string> similarExtensionMap = createSimilarExtensionMap();
+        auto it = similarExtensionMap.find(suffix);
+        if (it != similarExtensionMap.end()) {
+            document = createParser(filename, it->second);
+        }
+    }
+
+    if (!document) {
+        std::cerr << "ERROR: [doConvertFileWithTruncation] Unsupported file extension: " << filename << std::endl;
+        return {};
+    }
+
+    try {
+        // Set truncation limit
+        document->setTruncationLimit(maxBytes);
+
+        // Convert with truncation control
+        document->convert();
+
+        // Get result and add truncation marker if needed
+        std::string result = std::move(document->m_text);
+        
+        // Fallback truncation: if the result still exceeds maxBytes, do final truncation
+        if (result.size() > maxBytes) {
+            result = document->applyFinalTruncation(result, maxBytes);
+            document->markAsTruncated();
+        }
+        
+        if (document->isTruncated()) {
+            result += "\n[CONTENT_TRUNCATED]";
+        }
+        
+        return result;
+    } catch (const std::logic_error &error) {
+        std::cout << error.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Parse failed: " << filename << std::endl;
+    }
+
+    return {};
+}
+
 std::string DocParser::convertFile(const std::string &filename)
 {
-    // 更高效地查找最后一个点的位置
-    size_t dotPos = filename.find_last_of('.');
-    if (dotPos == std::string::npos || dotPos == filename.length() - 1)
+    std::string suffix = extractFileExtension(filename);
+    if (suffix.empty()) {
         return {};
-
-    std::string suffix = filename.substr(dotPos + 1);
-    std::transform(suffix.begin(), suffix.end(), suffix.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
+    }
 
     // 尝试使用原始后缀解析
     std::string content = doConvertFile(filename, suffix);
@@ -260,7 +371,6 @@ std::string DocParser::convertFile(const std::string &filename)
         return content;
 
     // 尝试相似后缀
-    static const std::unordered_map<std::string, FileCreator> extensionMap = createExtensionMap();
     static const std::unordered_map<std::string, std::string> similarExtensionMap = createSimilarExtensionMap();
 
     auto it = similarExtensionMap.find(suffix);
@@ -269,4 +379,15 @@ std::string DocParser::convertFile(const std::string &filename)
     }
 
     return {};
+}
+
+std::string DocParser::convertFile(const std::string &filename, size_t maxBytes)
+{
+    // Quick check for small files - use original path for maximum compatibility
+    if (isSmallFile(filename, maxBytes)) {
+        return convertFile(filename);
+    }
+
+    // Use truncation processing for all other cases
+    return doConvertFileWithTruncation(filename, maxBytes);
 }

@@ -49,7 +49,10 @@ int Pptx::convert(bool addStyle, bool extractImages, char mergingMode) {
         Ooxml::extractFile(m_fileName, xmlName, tree);
         TreeWalker walker;
         tree.traverse(walker);
-        m_text += walker.content;
+        if (!safeAppendText(walker.content)) {
+            // Truncation occurred, stop processing
+            break;
+        }
     }
 
     return 0;
