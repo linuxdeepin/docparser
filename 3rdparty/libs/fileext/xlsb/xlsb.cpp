@@ -77,6 +77,12 @@ int Xlsb::convert(bool addStyle, bool extractImages, char mergingMode)
     if (!parseWorkSheets(m_text))
         return -1;
 
+    // Apply truncation if enabled
+    if (m_truncationEnabled && m_text.size() > m_maxBytes) {
+        m_text = truncateAtBoundary(m_text, m_maxBytes);
+        m_truncated = true;
+    }
+
     return 0;
 }
 

@@ -11,6 +11,7 @@ class DocParser
 {
 public:
     static std::string convertFile(const std::string &filename);
+    static std::string convertFile(const std::string &filename, size_t maxBytes);
 };
 
 #endif // DOCPARSER_H

@@ -28,6 +28,11 @@ int Pdf::convert(bool addStyle, bool extractImages, char mergingMode) {
 
     int numPage = doc->pages();
     for (int i = 0; i < numPage; ++i) {
+        // Check if we should stop processing due to truncation
+        if (shouldStopProcessing()) {
+            break;
+        }
+        
         poppler::page *page = doc->create_page(i);
         if (page) {
             const auto &text = page->text();
@@ -35,7 +40,12 @@ int Pdf::convert(bool addStyle, bool extractImages, char mergingMode) {
                 const auto strutf8 = text.to_utf8();
                 std::string str;
                 str.assign(strutf8.begin(), strutf8.end());
-                m_text += str;
+                
+                if (!safeAppendText(str)) {
+                    // Truncation occurred, stop processing
+                    delete page;
+                    break;
+                }
             }
             delete page;
         }

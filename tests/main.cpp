@@ -34,6 +34,7 @@ int main(int argc, char **argv)
 
     // Get positional arguments
     const QStringList args = parser.positionalArguments();
+    int truncCount = 0;
 
     // Check if a file path was provided
     if (args.isEmpty()) {
@@ -44,6 +45,11 @@ int main(int argc, char **argv)
 
     // Get the file path
     QString filePath = args.first();
+
+    // Get the tunc count
+    if (args.count() == 2) {
+        truncCount = args[1].toInt();
+    }
 
     // Check if the file exists
     QFileInfo fileInfo(filePath);
@@ -63,7 +69,8 @@ int main(int argc, char **argv)
 
     try {
         // Call the docparser library to parse the file
-        std::string content = DocParser::convertFile(filePath.toStdString());
+        std::string content = truncCount > 0 ? DocParser::convertFile(filePath.toStdString(), truncCount)
+                                             : DocParser::convertFile(filePath.toStdString());
 
         // Convert encoding
         if (fromEncoding.toLower() != "utf-8") {

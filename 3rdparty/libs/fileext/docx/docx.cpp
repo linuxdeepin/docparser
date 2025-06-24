@@ -293,7 +293,10 @@ void Docx::getParagraphText(const pugi::xml_node& xmlNode) {
 		}
 	}
 
-    m_text += text + '\n';
+    if (!safeAppendText(text + '\n')) {
+        // Truncation occurred, stop processing
+        return;
+    }
 }
 
 std::string Docx::getElementText(const pugi::xml_node& xmlNode) {

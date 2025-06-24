@@ -65,6 +65,12 @@ int Excel::convert(bool addStyle, bool extractImages, char mergingMode) {
 		book->openWorkbookXls();
 	}
 
+	// Apply truncation if enabled
+	if (m_truncationEnabled && m_text.size() > m_maxBytes) {
+		m_text = truncateAtBoundary(m_text, m_maxBytes);
+		m_truncated = true;
+	}
+
 	delete book;
     return 0;
 }

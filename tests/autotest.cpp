@@ -56,6 +56,13 @@ private slots:
     // MIME type detection tests
     void testMimeTypeDetection();
 
+    // Truncation functionality tests
+    void testTruncationBasicFunctionality();
+    void testTruncationWithSmallFiles();
+    void testTruncationWithLargeFiles();
+    void testTruncationBoundaryConditions();
+    void testTruncationBackwardCompatibility();
+
 private:
     QString createTestFile(const QString &content, const QString &suffix = "txt");
     QString createBinaryTestFile(const QByteArray &data, const QString &suffix);
@@ -412,6 +419,149 @@ void DocParserAutoTest::testMimeTypeDetection()
     // Note: This test depends on the MIME type detection implementation
     // It may return empty if MIME detection is strict about extensions
     qInfo() << "INFO: [DocParserAutoTest::testMimeTypeDetection] MIME detection result length:" << result.length();
+}
+
+void DocParserAutoTest::testTruncationBasicFunctionality()
+{
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationBasicFunctionality] Testing basic truncation functionality";
+
+    QString content = "This is a test file with some content that should be truncated at a specific point.";
+    QString testFile = createTestFile(content, "txt");
+    QVERIFY(!testFile.isEmpty());
+
+    // Test truncation at 30 bytes
+    size_t maxBytes = 30;
+    std::string result = DocParser::convertFile(testFile.toStdString(), maxBytes);
+
+    QVERIFY2(!result.empty(), "Truncated result should not be empty");
+    QVERIFY2(result.length() <= maxBytes + 20, "Result should be approximately within truncation limit"); // Allow some margin for boundary truncation
+    QVERIFY2(result.find("[CONTENT_TRUNCATED]") != std::string::npos, "Result should contain truncation marker");
+
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationBasicFunctionality] Original length:" << content.length() 
+            << "Truncated length:" << result.length();
+}
+
+void DocParserAutoTest::testTruncationWithSmallFiles()
+{
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationWithSmallFiles] Testing truncation with small files";
+
+    QString content = "Small file content";
+    QString testFile = createTestFile(content, "txt");
+    QVERIFY(!testFile.isEmpty());
+
+    // Set truncation limit larger than file content
+    size_t maxBytes = 1000;
+    std::string resultTruncated = DocParser::convertFile(testFile.toStdString(), maxBytes);
+    std::string resultOriginal = DocParser::convertFile(testFile.toStdString());
+
+    // Results should be identical for small files
+    QVERIFY2(resultTruncated == resultOriginal, "Small files should produce identical results with both methods");
+    QVERIFY2(resultTruncated.find("[CONTENT_TRUNCATED]") == std::string::npos, "Small files should not be marked as truncated");
+
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationWithSmallFiles] Both results identical, length:" << resultTruncated.length();
+}
+
+void DocParserAutoTest::testTruncationWithLargeFiles()
+{
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationWithLargeFiles] Testing truncation with large files";
+
+    // Create a large text file (100KB)
+    const int largeSize = 100 * 1024; // 100KB
+    QString largeContent;
+    largeContent.reserve(largeSize);
+
+    for (int i = 0; i < largeSize / 50; ++i) {
+        largeContent += QString("This is line %1 with some content to make the file large.\n").arg(i);
+    }
+
+    QString largeFile = createTestFile(largeContent, "txt");
+    QVERIFY(!largeFile.isEmpty());
+
+    // Test truncation at 10KB
+    size_t maxBytes = 10 * 1024;
+    QElapsedTimer timer;
+    timer.start();
+
+    std::string result = DocParser::convertFile(largeFile.toStdString(), maxBytes);
+
+    qint64 elapsed = timer.elapsed();
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationWithLargeFiles] Truncated large file parsing took" << elapsed << "ms";
+
+    QVERIFY2(!result.empty(), "Large file truncation should produce result");
+    QVERIFY2(result.length() <= maxBytes + 100, "Truncated result should be within reasonable bounds"); // Allow margin for boundary and marker
+    QVERIFY2(result.find("[CONTENT_TRUNCATED]") != std::string::npos, "Large file should be marked as truncated");
+    QVERIFY2(elapsed < 5000, "Truncated parsing should be faster than full parsing"); // Performance check
+
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationWithLargeFiles] Original size:" << largeContent.length() 
+            << "Truncated size:" << result.length();
+}
+
+void DocParserAutoTest::testTruncationBoundaryConditions()
+{
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationBoundaryConditions] Testing truncation boundary conditions";
+
+    QString content = "This is a test. This is another sentence! And this is the third one?";
+    QString testFile = createTestFile(content, "txt");
+    QVERIFY(!testFile.isEmpty());
+
+    // Test various boundary conditions
+    QList<size_t> testSizes = {0, 1, 10, 20, 30, 100};
+
+    for (size_t maxBytes : testSizes) {
+        std::string result = DocParser::convertFile(testFile.toStdString(), maxBytes);
+        
+        if (maxBytes == 0) {
+            // Zero bytes limit should produce empty result or just the truncation marker
+            bool isValidZeroResult = result.empty() || 
+                                   result == "\n[CONTENT_TRUNCATED]" || 
+                                   result == "[CONTENT_TRUNCATED]";
+            QVERIFY2(isValidZeroResult, qPrintable(QString("Zero bytes should produce empty or marker-only result, got: '%1'").arg(QString::fromStdString(result))));
+        } else if (maxBytes >= content.length()) {
+            // Should not be truncated
+            QVERIFY2(result.find("[CONTENT_TRUNCATED]") == std::string::npos, 
+                     qPrintable(QString("Content smaller than limit (%1) should not be truncated").arg(maxBytes)));
+        } else {
+            // Should be truncated
+            QVERIFY2(result.find("[CONTENT_TRUNCATED]") != std::string::npos, 
+                     qPrintable(QString("Content larger than limit (%1) should be truncated").arg(maxBytes)));
+        }
+
+        qInfo() << "INFO: [DocParserAutoTest::testTruncationBoundaryConditions] Limit:" << maxBytes 
+                << "Result length:" << result.length();
+    }
+}
+
+void DocParserAutoTest::testTruncationBackwardCompatibility()
+{
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationBackwardCompatibility] Testing backward compatibility";
+
+    QStringList testContents = {
+        "Simple text content",
+        "Multi-line\ncontent\nwith\nseveral\nlines",
+        "Content with special characters: äöü 中文 🚀",
+        ""  // Empty content
+    };
+
+    QStringList extensions = {"txt", "md", "html", "json"};
+
+    for (const QString& content : testContents) {
+        for (const QString& ext : extensions) {
+            QString testFile = createTestFile(content, ext);
+            if (testFile.isEmpty()) continue;
+
+            // Test that original method still works exactly as before
+            std::string resultOriginal = DocParser::convertFile(testFile.toStdString());
+            
+            // Test that new method with large limit produces identical results
+            std::string resultWithLimit = DocParser::convertFile(testFile.toStdString(), 1000000); // 1MB limit
+            
+            QVERIFY2(resultOriginal == resultWithLimit, 
+                     qPrintable(QString("Backward compatibility failed for %1 file with content length %2")
+                                .arg(ext).arg(content.length())));
+        }
+    }
+
+    qInfo() << "INFO: [DocParserAutoTest::testTruncationBackwardCompatibility] All backward compatibility tests passed";
 }
 
 QString DocParserAutoTest::createTestFile(const QString &content, const QString &suffix)
