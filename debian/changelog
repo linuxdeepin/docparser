@@ -1,3 +1,9 @@
+docparser (1.0.22) unstable; urgency=medium
+
+  * enhance error handling in formula evaluation
+
+ -- liujinchang <liujinchang@uniontech.com>  Tue, 05 Aug 2025 19:35:19 +0800
+
 docparser (1.0.21) unstable; urgency=medium
 
   * enhance CMake configuration for libmagic dependency handling
@@ -44,7 +50,7 @@ docparser (1.0.15) unstable; urgency=medium
 docparser (1.0.14) unstable; urgency=medium
 
   * fix bug
-  * 
+  *
 
  -- Zhang Sheng <zhangsheng@uniontech.com>  Tue, 07 Jan 2025 13:04:28 +0800
 
