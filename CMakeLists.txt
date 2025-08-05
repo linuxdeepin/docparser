@@ -62,10 +62,12 @@ set(DEPS_INCLUDE_DIRS ${DEPS_WITHOUT_MAGIC_INCLUDE_DIRS} ${LIBMAGIC_INCLUDE_DIRS
 # 添加子目录
 add_subdirectory(src) 
 
-# 添加测试选项，默认不构建
-option(BUILD_TESTS "Build test applications" OFF)
+# 添加测试选项，默认构建
+option(BUILD_TESTS "Build test applications" ON)
 
 # 有条件地添加测试目录
 if(BUILD_TESTS)
-    add_subdirectory(tests)
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        add_subdirectory(tests)
+    endif()
 endif()
