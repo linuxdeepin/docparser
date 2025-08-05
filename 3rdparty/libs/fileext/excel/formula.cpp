@@ -743,26 +743,34 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
             // tName
             else if (opCode == 0x03) {
                 unsigned short targetNameIndex = m_book->readByte<unsigned short>(data, pos+1, 2) - 1;
-                // Only change with BIFF version is number of trailing UNUSED bytes!
-                Name& targetName = m_book->m_nameObjList[targetNameIndex];
-                // Recursive
-                if (!targetName.m_evaluated)
-                    evaluateFormula(targetName, targetNameIndex, level+1);
 
-                Operand res(oUNK);
-                if (!targetName.m_stack.empty() && !(targetName.m_macro || targetName.m_isBinary || targetName.m_hasError))
-                    res = targetName.m_stack[0];
-                res.m_rank = LEAF_RANK;
-
-                if (targetName.m_scope == -1) {
-                    res.m_text  = targetName.m_name;
-                    hasError    = (hasError || targetName.m_macro || targetName.m_isBinary || targetName.m_hasError);
-                    hasRelation = (hasRelation || targetName.m_hasRelation);
+                // 添加边界检查，防止访问无效内存
+                if (targetNameIndex >= m_book->m_nameObjList.size()) {
+                    hasError = true;
+                    stack.push_back(errorOp);
                 }
                 else {
-                    res.m_text = m_book->m_sheetNames[targetName.m_scope] + "%s!" + targetName.m_name;
+                    // Only change with BIFF version is number of trailing UNUSED bytes!
+                    Name& targetName = m_book->m_nameObjList[targetNameIndex];
+                    // Recursive
+                    if (!targetName.m_evaluated)
+                        evaluateFormula(targetName, targetNameIndex, level+1);
+
+                    Operand res(oUNK);
+                    if (!targetName.m_stack.empty() && !(targetName.m_macro || targetName.m_isBinary || targetName.m_hasError))
+                        res = targetName.m_stack[0];
+                    res.m_rank = LEAF_RANK;
+
+                    if (targetName.m_scope == -1) {
+                        res.m_text  = targetName.m_name;
+                        hasError    = (hasError || targetName.m_macro || targetName.m_isBinary || targetName.m_hasError);
+                        hasRelation = (hasRelation || targetName.m_hasRelation);
+                    }
+                    else {
+                        res.m_text = m_book->m_sheetNames[targetName.m_scope] + "%s!" + targetName.m_name;
+                    }
+                    stack.push_back(res);
                 }
-                stack.push_back(res);
             }
             // tRef
             else if (opCode == 0x04) {
