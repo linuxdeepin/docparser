@@ -988,7 +988,13 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
                         hasRelation = (hasRelation || targetName.m_hasRelation);
                     }
                     else {
-                        res = targetName.m_stack[0];
+                        // 防御性检查：确保 stack 不为空
+                        if (!targetName.m_stack.empty())
+                            res = targetName.m_stack[0];
+                        else {
+                            res = Operand(oERR);
+                            hasError = true;
+                        }
                     }
 
                     res.m_rank = LEAF_RANK;
@@ -1021,6 +1027,12 @@ void Formula::evaluateFormula(Name& name, int nameIndex, int level) {
     name.m_evaluated   = true;
     } catch (const std::exception &e) {
         std::cout << e.what() << std::endl;
+        // 确保异常后 m_stack 不为空，避免后续访问崩溃
+        if (name.m_stack.empty()) {
+            name.m_stack.push_back(Operand(oERR));
+        }
+        name.m_hasError = true;
+        name.m_evaluated = true;
     }
 }
 
