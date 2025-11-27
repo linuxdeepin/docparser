@@ -1,3 +1,9 @@
+docparser (1.0.23) unstable; urgency=medium
+
+  * add defensive checks in excel formula evaluation
+
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Thu, 27 Nov 2025 17:22:05 +0800
+
 docparser (1.0.22) unstable; urgency=medium
 
   * enhance error handling in formula evaluation
