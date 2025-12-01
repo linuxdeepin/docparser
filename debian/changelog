@@ -1,3 +1,9 @@
+docparser (1.0.25) unstable; urgency=medium
+
+  * add ET file format support
+
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Mon, 01 Dec 2025 09:11:51 +0800
+
 docparser (1.0.24) unstable; urgency=medium
 
   * improve file conversion fallback logic for truncated files
