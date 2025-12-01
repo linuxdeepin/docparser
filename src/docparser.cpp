@@ -220,6 +220,7 @@ static const std::unordered_map<std::string, FileCreator> createExtensionMap()
         { "odp", createOdf },
         { "xls", createExcel },
         { "xlsx", createExcel },
+        { "et", createExcel },
         { "xlsb", createXlsb },
         { "ppt", createPpt },
         { "pps", createPpt },
