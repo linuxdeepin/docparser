@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 UnionTech Software Technology Co., Ltd.
+// SPDX-FileCopyrightText: 2024 - 2026 UnionTech Software Technology Co., Ltd.
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
@@ -76,7 +76,11 @@ int main(int argc, char **argv)
         if (fromEncoding.toLower() != "utf-8") {
             auto in = QByteArray::fromStdString(content);
             QByteArray out;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             Dtk::Core::DTextEncoding::convertTextEncodingEx(in, out, "utf-8", fromEncoding);
+#else
+            Dtk::Core::DTextEncoding::convertTextEncoding(in, out, "utf-8", fromEncoding);
+#endif
             content = out.toStdString();
         }
 

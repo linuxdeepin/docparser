@@ -1,6 +1,11 @@
 set(CMAKE_AUTOMOC ON)
-find_package(Qt6 REQUIRED COMPONENTS Core Test)
-find_package(Dtk6 REQUIRED COMPONENTS Core)
+if(Qt6_FOUND)
+    find_package(Qt6 REQUIRED COMPONENTS Core Test)
+    find_package(Dtk6 REQUIRED COMPONENTS Core)
+else()
+    find_package(Qt5 REQUIRED COMPONENTS Core Test)
+    find_package(DtkCore REQUIRED)
+endif()
 
 # Enable testing
 enable_testing()
@@ -25,16 +30,16 @@ add_executable(docparser_autotest ${AUTOTEST_SOURCES})
 target_link_libraries(docparser_test
     PRIVATE
         docparser
-        Qt6::Core
-        Dtk6::Core
+        $<IF:$<BOOL:${Qt6_FOUND}>,Qt6::Core,Qt5::Core>
+        $<IF:$<BOOL:${Qt6_FOUND}>,Dtk6::Core,Dtk::Core>
 )
 
 # 链接自动化测试所需的库
 target_link_libraries(docparser_autotest
     PRIVATE
         docparser
-        Qt6::Core
-        Qt6::Test
+        $<IF:$<BOOL:${Qt6_FOUND}>,Qt6::Core,Qt5::Core>
+        $<IF:$<BOOL:${Qt6_FOUND}>,Qt6::Test,Qt5::Test>
 )
 
 # 设置包含目录
