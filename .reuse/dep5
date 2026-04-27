@@ -28,6 +28,19 @@ Files: 3rdparty/libs/*
 Copyright: 2018 Dmitry Ryutov
 License: MIT
 
+Files: 3rdparty/libs/fileext/excel/xlsxio/*
+Copyright: 2016 Brecht Sanders
+License: MIT
+
+Files: 3rdparty/libs/fileext/excel/libxls/*
+Copyright: 2004 Komarov Valery, 2006 Christophe Leitienne, 2008-2017 David Hoerl, 2013 Bob Colbert, 2013-2018 Evan Miller
+License: BSD-2-Clause
+
 Files: 3rdparty/utils/*
 Copyright: None
 License: MIT
+
+# test data
+Files: tests/file/*
+Copyright: None
+License: CC0-1.0
