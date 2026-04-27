@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(docparser VERSION 1.0.0 LANGUAGES CXX)
+project(docparser VERSION 1.0.0 LANGUAGES C CXX)
 
 # 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
@@ -24,6 +24,7 @@ pkg_check_modules(DEPS_WITHOUT_MAGIC REQUIRED
     libxml-2.0
     uuid
     tinyxml2
+    expat
 )
 
 # 单独处理libmagic依赖，兼容新旧环境
@@ -59,8 +60,10 @@ endif()
 set(DEPS_LIBRARIES ${DEPS_WITHOUT_MAGIC_LIBRARIES} ${LIBMAGIC_LIBRARIES})
 set(DEPS_INCLUDE_DIRS ${DEPS_WITHOUT_MAGIC_INCLUDE_DIRS} ${LIBMAGIC_INCLUDE_DIRS})
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # 添加子目录
-add_subdirectory(src) 
+add_subdirectory(src)
 
 # 添加测试选项，默认构建
 option(BUILD_TESTS "Build test applications" ON)
