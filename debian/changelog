@@ -1,3 +1,9 @@
+docparser (1.0.26) unstable; urgency=medium
+
+  * replace excel parsing with libxls and xlsxio
+
+ -- liujinchang <liujinchang@uniontech.com>  Tue, 26 May 2026 09:11:51 +0800
+
 docparser (1.0.25) unstable; urgency=medium
 
   * add ET file format support
