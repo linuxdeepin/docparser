@@ -283,12 +283,18 @@ static std::string doConvertFile(const std::string &filename, std::string suffix
     std::transform(suffix.begin(), suffix.end(), suffix.begin(),
                    [](unsigned char c) { return std::tolower(c); });
 
-    std::unique_ptr<fileext::FileExtension> document = createParser(filename, suffix);
-    if (!document) {
-        throw std::logic_error("Unsupported file extension: " + filename);
-    }
-
+    // createParser() 的调用和 nullptr 检查都必须在 try 块内：
+    // 1) 构造期可能抛异常（如某些解析器在打开损坏文件时）；
+    // 2) 不支持的扩展名不应抛异常——上层调用方（如 dde-file-manager 的
+    //    TextExtractor::extract）可能没有 try-catch，异常一旦逃逸会触发
+    //    std::terminate -> abort。此处返回空串，与 tryConvertWithTruncation 一致。
     try {
+        std::unique_ptr<fileext::FileExtension> document = createParser(filename, suffix);
+        if (!document) {
+            std::cout << "Unsupported file extension: " << filename << std::endl;
+            return {};
+        }
+
         document->convert();
         // Use move semantics to avoid copying
         return std::move(document->m_text);
