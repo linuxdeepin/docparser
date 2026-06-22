@@ -684,6 +684,13 @@ void iterate_files_by_contenttype_expat_callback_element_start (void* callbackda
     }
   } else if (XML_Char_icmp_ins(name, X("Default")) == 0) {
     //by extension
+    // minizip 后端下：外层 expat_process_zip_file 已 unzOpenCurrentFile 打开
+    // [Content_Types].xml 并流式读取，此处对同一 unzFile 调用 unzGoToFirstFile /
+    // unzGetCurrentFileInfo / unzGoToNextFile 会破坏 minizip 单状态机导致段错误
+    // （上游 issue #28，xlsxio 0.2.36 仍未修复）。合法 xlsx 的 main contenttype 必
+    // 通过 <Override> 声明，<Default> 扩展名匹配对 xlsxio 无意义，故 minizip 后端
+    // 直接跳过本分支；libzip 后端基于索引的 zip_get_name 不受影响，逻辑保留。
+#ifndef USE_MINIZIP
     const XML_Char* contenttype;
     const XML_Char* extension;
     if ((contenttype = get_expat_attr_by_name(atts, X("ContentType"))) != NULL && XML_Char_icmp(contenttype, data->contenttype) == 0) {
@@ -731,6 +738,7 @@ unzGetGlobalInfo(data->zip, &zipglobalinfo);
 #endif
       }
     }
+#endif /* !USE_MINIZIP: 跳过 <Default> 分支，避免 minizip 状态冲突崩溃 */
   }
 }
 
