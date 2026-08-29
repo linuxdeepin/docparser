@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 安全编译选项
 add_compile_options(-fstack-protector-strong -D_FORTITY_SOURCE=1)
-add_link_options(-z noexecstack -pie -fPIC)
+add_link_options(-z noexecstack -fPIC)
 
 # 设置安装路径
 include(GNUInstallDirs)
