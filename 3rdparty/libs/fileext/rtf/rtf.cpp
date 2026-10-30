@@ -67,7 +67,7 @@ int  Rtf::convert(bool addStyle, bool extractImages, char mergingMode) {
                 }
             } else if (hasAsterisk) {// Skip groups with \*
                 hasAsterisk   = false;
-                skipGroup(dataIter);
+                skipGroup(dataIter, dataEnd);
             } else {
                 std::string& keyword = kw.m_name;
                 // Skip such groups
@@ -75,7 +75,7 @@ int  Rtf::convert(bool addStyle, bool extractImages, char mergingMode) {
                         keyword == "footer"   || keyword == "headerf"    || keyword == "footerf" ||
                         keyword == "object"   || keyword == "info"       || keyword == "colortbl" ||
                         keyword == "pict"     || keyword == "fonttbl") {
-                    skipGroup(dataIter);
+                    skipGroup(dataIter, dataEnd);
                 } else if (keyword == "line" || keyword == "softline" || keyword == "par" || keyword == "cell") { // Special chars
                     m_text += "\n";
                 } else if (keyword == "tab") {
@@ -140,9 +140,10 @@ int  Rtf::convert(bool addStyle, bool extractImages, char mergingMode) {
 
 
 // private:
-void Rtf::skipGroup(std::string::iterator& it) const {
+void Rtf::skipGroup(std::string::iterator& it, std::string::iterator end) const {
     int count = 1;
     while (count) {
+        if (it == end) break;
         switch (*it++) {
         case '{':
             count++;

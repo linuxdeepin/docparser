@@ -61,7 +61,7 @@ private:
 	 *     Begining of group iterator
 	 * @since 1.0
 	 */
-	void skipGroup(std::string::iterator& it) const;
+	void skipGroup(std::string::iterator& it, std::string::iterator end) const;
 
 	/**
 	 * @brief
