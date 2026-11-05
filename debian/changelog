@@ -1,3 +1,11 @@
+docparser (1.0.27) unstable; urgency=medium
+
+  * fix(excel): fix segfault on xlsx with main content type declared via <Default>
+  * fix(docparser): prevent exception escape in doConvertFile from aborting host process
+  * fix: prevent SIGSEGV in RTF skipGroup on unmatched braces
+
+ -- Zhang Sheng <zhangsheng@uniontech.com>  Thu, 05 Nov 2026 21:20:02 +0800
+
 docparser (1.0.26) unstable; urgency=medium
 
   * replace excel parsing with libxls and xlsxio
